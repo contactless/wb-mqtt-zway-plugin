@@ -278,7 +278,7 @@ MQTT.prototype.publish = function (topic, value, retained) {
 MQTT.prototype.createTopic = function (pattern, device) {
 	var self = this;
 
-	var topicParts = [].concat(self.config.topicPrefix.split("/"))
+	var topicParts = [].concat(self.config.topicPrefix)
 		.concat(pattern.split("/"));
 
 	if (device != undefined) {
