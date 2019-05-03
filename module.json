@@ -10,9 +10,9 @@
 		"port": "1883",
 		"user": "none",
 		"password": "none",
-		"topicPrefix": "zway",
+		"topicPrefix": "/devices/zway/controls",
 		"topicPostfixStatus": "status",
-		"topicPostfixSet": "set",
+		"topicPostfixSet": "on",
 		"ignore": true
 	},
 	"dependencies": [
