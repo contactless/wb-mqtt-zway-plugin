@@ -143,6 +143,12 @@ MQTT.prototype.setupMQTTClient = function () {
 							device.performCommand("exact", {level: payload + "%"});
 						} else if (deviceType === "thermostat") {
 							device.performCommand("exact", {level: payload});
+						} else if (deviceType === "switchBinary") {
+							if (payload === "0") {
+								device.performCommand("off");
+							} else if (payload === "1") {
+								device.performCommand("on");
+							}
 						} else {
 							device.performCommand(payload);
 						}
@@ -205,10 +211,10 @@ MQTT.prototype.updateDevice = function (device) {
 	}
 
 	if (device.get("deviceType") == "switchBinary" || device.get("deviceType") == "sensorBinary") {
-		if (value == 0) {
-			value = "off";
-		} else if (value == 255) {
-			value = "on";
+		if (value == 0 || value === "off") {
+			value = "0";
+		} else if (value == 255 || value === "on") {
+			value = "1";
 		}
 	}
 
