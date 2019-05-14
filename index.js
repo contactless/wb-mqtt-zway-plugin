@@ -47,7 +47,7 @@ MQTT.prototype.init = function (config) {
 	self.isStopping = false;
 	self.isConnected = false;
 	self.isConnecting = true;
-	self.client.connect();		
+	self.client.connect();	
 	
 	var event = self.config.ignore ? "change:metrics:level" : "modify:metrics:level";
 	self.callback = _.bind(self.updateDevice, self);
