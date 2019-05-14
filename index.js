@@ -117,45 +117,7 @@ MQTT.prototype.setupMQTTClient = function () {
 		self.isStopping = false;
 		self.reconnectCount = 0;
 
-		self.client.subscribe(self.createTopic("/#"), {}, function (topic, payload) {
-			var topic = topic.toString();
-
-			if (!topic.endsWith(self.config.topicPostfixStatus) && !topic.endsWith(self.config.topicPostfixSet))
-				return;
-
-			self.controller.devices.each(function (device) {
-				self.processPublicationsForDevice(device, function (device, publication) {
-					var deviceTopic = self.createTopic(publication.topic, device);
-
-					if (topic == deviceTopic + "/" + self.config.topicPostfixStatus) {
-						self.updateDevice(device);
-					}
-
-					if (topic == deviceTopic + "/" + self.config.topicPostfixSet) {
-						var deviceType = device.get('deviceType');
-
-						if (deviceType.startsWith("sensor")) {
-							self.error("Can't perform action on sensor " + device.get("metrics:title"));
-							return;
-						}
-
-						if (deviceType === "switchMultilevel" && payload !== "on" && payload !== "off" && payload !== "stop") {
-							device.performCommand("exact", {level: payload + "%"});
-						} else if (deviceType === "thermostat") {
-							device.performCommand("exact", {level: payload});
-						} else if (deviceType === "switchBinary") {
-							if (payload === "0") {
-								device.performCommand("off");
-							} else if (payload === "1") {
-								device.performCommand("on");
-							}
-						} else {
-							device.performCommand(payload);
-						}
-					}
-				});
-			});
-		});
+		self.client.subscribe(self.createTopic("/#"), {}, _.bind(self.parseMQTTCommand, self));
 
 		// Publish connected notification
 		self.publish(self.createTopic("/connected"), "2", true);
@@ -312,6 +274,47 @@ MQTT.prototype.findRoom = function (roomId) {
 		})[0];
 	}
 	return undefined;
+};
+
+MQTT.prototype.parseMQTTCommand = function (topic, payload) {
+	var self = this;
+	var topic = topic.toString();
+
+	if (!topic.endsWith(self.config.topicPostfixStatus) && !topic.endsWith(self.config.topicPostfixSet))
+		return;
+
+	self.controller.devices.each(function (device) {
+		self.processPublicationsForDevice(device, function (device, publication) {
+			var deviceTopic = self.createTopic(publication.topic, device);
+
+			if (topic == deviceTopic + "/" + self.config.topicPostfixStatus) {
+				self.updateDevice(device);
+			}
+
+			if (topic == deviceTopic + "/" + self.config.topicPostfixSet) {
+				var deviceType = device.get('deviceType');
+
+				if (deviceType.startsWith("sensor")) {
+					self.error("Can't perform action on sensor " + device.get("metrics:title"));
+					return;
+				}
+
+				if (deviceType === "switchMultilevel" && payload !== "on" && payload !== "off" && payload !== "stop") {
+					device.performCommand("exact", {level: payload + "%"});
+				} else if (deviceType === "thermostat") {
+					device.performCommand("exact", {level: payload});
+				} else if (deviceType === "switchBinary") {
+					if (payload === "0") {
+						device.performCommand("off");
+					} else if (payload === "1") {
+						device.performCommand("on");
+					}
+				} else {
+					device.performCommand(payload);
+				}
+			}
+		});
+	});
 };
 
 // ----------------------------------------------------------------------------
