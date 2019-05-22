@@ -25,6 +25,11 @@ git pull
 
 Add an instance of the app through Z-Wave interface (Menu - Apps - Local Apps). No configuration needed. All configuration fields are skipped.
 
+If new device was added to Z-Way later, restart module with:
+```shell
+service z-way-server restart
+```
+
 # Acknowledgements
 
 I want to thank @Edubits for developing this module. It's only slightly simplified to work with Wiren Board. His module can be found at https://github.com/Edubits/Zway-MQTT.
