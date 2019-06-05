@@ -5,22 +5,20 @@ values based on subscribed topics.
 
 # Installation
 
-Make sure that the [BaseModule](https://github.com/maros/Zway-BaseModule) is installed prior to installing this 
+1. Make sure that the [BaseModule](https://github.com/maros/Zway-BaseModule) is installed prior to installing this 
 module.
-
+2. Install module:
 ```shell
-# Execute on Wiren Board
-apt install git
-cd /opt/z-way-server/automation/userModules
-git clone https://github.com/contactless/Zway-MQTT.git MQTT
+        # Execute on Wiren Board
+        apt install git
+        cd /opt/z-way-server/automation/userModules
+        git clone https://github.com/contactless/Zway-MQTT.git MQTT
 ```
-
-To update to last version in this repo:
+3. To update to last version in this repo:
 ```shell
-cd /opt/z-way-server/automation/userModules/MQTT
-git pull
+        cd /opt/z-way-server/automation/userModules/MQTT
+        git pull
 ```
-
 # Usage
 
 Add an instance of the app through Z-Wave interface (Menu - Apps - Local Apps). No configuration needed. All configuration fields are skipped.
