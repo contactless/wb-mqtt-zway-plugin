@@ -12,7 +12,7 @@ module.
         # Execute on Wiren Board
         apt install git
         cd /opt/z-way-server/automation/userModules
-        git clone https://github.com/contactless/Zway-MQTT.git MQTT
+        git clone https://github.com/contactless/wb-mqtt-zway-plugin.git MQTT
 ```
 3. To update to last version in this repo:
 ```shell
