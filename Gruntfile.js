@@ -16,7 +16,7 @@ module.exports = function(grunt) {
         compress: {
             main: {
                 options: {
-                    archive: 'out/Zway-MQTT.tar.gz'
+                    archive: 'out/Zway-WBMQTT.tar.gz'
                 },
                 files: [
                     {
