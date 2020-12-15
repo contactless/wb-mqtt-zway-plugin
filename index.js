@@ -5,7 +5,7 @@ Version: 1.3
 -----------------------------------------------------------------------------
 Author: Robin Eggenkamp <robin@edubits.nl>
 Description:
-   Publishes the status of devices to a MQTT topic and is able
+   Publishes the status of devices to a Wiren Board MQTT topic and is able
    to set values based on subscribed topics
 
    MQTTClient based on https://github.com/goodfield/zway-mqtt
@@ -17,21 +17,21 @@ Description:
 // --- Class definition, inheritance and setup
 // ----------------------------------------------------------------------------
 
-function MQTT (id, controller) {
-	MQTT.super_.call(this, id, controller);
+function WBMQTT (id, controller) {
+	WBMQTT.super_.call(this, id, controller);
 }
 
-inherits(MQTT, BaseModule);
+inherits(WBMQTT, BaseModule);
 
-_module = MQTT;
+_module = WBMQTT;
 
 // ----------------------------------------------------------------------------
 // --- Module instance initialized
 // ----------------------------------------------------------------------------
 
-MQTT.prototype.init = function (config) {
+WBMQTT.prototype.init = function (config) {
 	// Call superclass' init (this will process config argument and so on)
-	MQTT.super_.prototype.init.call(this, config);
+	WBMQTT.super_.prototype.init.call(this, config);
 
 	var self = this;
 	self.prefix = "/devices/z-way";
@@ -54,7 +54,7 @@ MQTT.prototype.init = function (config) {
 	self.controller.devices.on("change:metrics:level", self.callback);
 };
 
-MQTT.prototype.stop = function () {
+WBMQTT.prototype.stop = function () {
 	var self = this;
 
 	self.controller.devices.off("change:metrics:level", self.callback);
@@ -69,14 +69,14 @@ MQTT.prototype.stop = function () {
 		self.reconnect_timer = null;
 	}
 
-	MQTT.super_.prototype.stop.call(this);
+	WBMQTT.super_.prototype.stop.call(this);
 };
 
 // ----------------------------------------------------------------------------
 // --- Module methods
 // ----------------------------------------------------------------------------
 
-MQTT.prototype.setupMQTTClient = function () {
+WBMQTT.prototype.setupMQTTClient = function () {
 	var self = this;
 
 	var mqttOptions = {
@@ -119,7 +119,7 @@ MQTT.prototype.setupMQTTClient = function () {
 	});
 };
 
-MQTT.prototype.onDisconnect = function () {
+WBMQTT.prototype.onDisconnect = function () {
 	var self = this;
 
 	// Reset connected flag
@@ -157,12 +157,12 @@ MQTT.prototype.onDisconnect = function () {
 	}, Math.min(self.reconnectCount * 1000, 60000));
 };
 
-MQTT.prototype.updateDevice = function (device) {
+WBMQTT.prototype.updateDevice = function (device) {
 	var self = this;
 	var deviceType = device.get("deviceType");
 	var retained = true;
 
-	if (!deviceType.startsWith("sensor") && deviceType != "switchBinary" && deviceType != "thermostat") {
+	if (!deviceType.startsWith("sensor") && !deviceType.startsWith("switch") && deviceType != "thermostat" && deviceType != "doorlock" && deviceType != "toggleButton") {
 		return; // exit if type not recognized since not all devices have "metrics:level" propery
 	}
 
@@ -180,7 +180,7 @@ MQTT.prototype.updateDevice = function (device) {
 	self.publish(topic, value, retained);
 };
 
-MQTT.prototype.publish = function (topic, value, retained) {
+WBMQTT.prototype.publish = function (topic, value, retained) {
 	var self = this;
 
 	if (self.client && self.client.connected) {
@@ -191,7 +191,7 @@ MQTT.prototype.publish = function (topic, value, retained) {
 	}
 };
 
-MQTT.prototype.parseMQTTCommand = function (topic, payload) {
+WBMQTT.prototype.parseMQTTCommand = function (topic, payload) {
 	var self = this;
 	var topic = topic.toString();
 
@@ -231,27 +231,35 @@ MQTT.prototype.parseMQTTCommand = function (topic, payload) {
 	});
 };
 
-MQTT.prototype.createDeviceTopic = function (device) {
+WBMQTT.prototype.createDeviceTopic = function (device) {
 	var self = this;
 	return self.prefix + "/controls/" + device.get("metrics:title").toTopicAffix() + " " + device.get("id").split("_").pop().toTopicAffix();
 }
 
-MQTT.prototype.publishAuxiliaryWBTopics = function () {
+WBMQTT.prototype.publishAuxiliaryWBTopics = function () {
 	var self = this;
-
 	self.publish(self.prefix + "/meta/name", "Z-Wave", true);
-
 	self.controller.devices.each(function (device) {
 		var deviceType = device.get('deviceType');
 		var deviceTopic = self.createDeviceTopic(device);
-		// self.publish(deviceTopic + "/meta/z-wave_type", deviceType, true); // uncomment to publish type for all Z-Wave devices
-
+		self.publish(deviceTopic + "/meta/z-wave_type", deviceType, true); 
 		if (deviceType.startsWith("sensor")) {
 			self.publish(deviceTopic + "/meta/type", "value", true);
 			self.publish(deviceTopic + "/meta/units", device.get("metrics:scaleTitle"), true);
 			self.updateDevice(device);
 		} else if (deviceType === "switchBinary") {
 			self.publish(deviceTopic + "/meta/type", "switch", true);
+			self.updateDevice(device);
+		} else if (deviceType === "switchMultilevel") {
+			self.publish(deviceTopic + "/meta/type", "range", true);
+			self.publish(deviceTopic + "/meta/max", 99, true);
+			self.updateDevice(device);
+		} else if (deviceType === "thermostat") {
+			self.publish(deviceTopic + "/meta/type", "range", true);
+			self.publish(deviceTopic + "/meta/max", device.get("metrics:max"), true);
+			self.updateDevice(device);
+		} else {
+			self.publish(deviceTopic + "/meta/type", "text", true);
 			self.updateDevice(device);
 		}
 	});
