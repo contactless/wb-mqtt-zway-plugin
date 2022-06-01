@@ -99,6 +99,8 @@ WBMQTT.prototype.setupMQTTClient = function () {
 	// mqttOptions.infoLogEnabled = true;
 
 	self.client = new MQTTClient(self.config.host, parseInt(self.config.port), mqttOptions);
+
+
 	self.client.onLog(function (msg) { self.log(msg.toString()); });
 	self.client.onError(function (error) { self.error(error.toString()); });
 	self.client.onDisconnect(function () { self.onDisconnect(); });
@@ -162,18 +164,29 @@ WBMQTT.prototype.updateDevice = function (device) {
 	var deviceType = device.get("deviceType");
 	var retained = true;
 
-	if (!deviceType.startsWith("sensor") && !deviceType.startsWith("switch") && deviceType != "thermostat" && deviceType != "doorlock" && deviceType != "toggleButton") {
-		return; // exit if type not recognized since not all devices have "metrics:level" propery
+	if (!(deviceType in zWaveDeviceType)){
+		return;
 	}
 
 	var value = device.get("metrics:level");
+	if (typeof value == "undefined"){
+		var id = device.get("id");
+		self.error("Device " + id + " metrics:level undefined");
+		return;
+	}
 
-	if (deviceType == "switchBinary" || deviceType == "sensorBinary") {
-		if (value == 0 || value === "off") {
-			value = "0";
-		} else if (value == 255 || value === "on") {
-			value = "1";
-		}
+	switch (deviceType){
+		case zWaveDeviceType.doorlock:
+		case zWaveDeviceType.switchBinary:
+		case zWaveDeviceType.sensorBinary:
+			if (value == 0 || value === "off" || value == "closed") {
+				value = "0";
+			} else if (value == 255 || value === "on" || value == "open") {
+				value = "1";
+			}
+			break;
+		default:
+			break;
 	}
 
 	var topic = self.createDeviceTopic(device);
@@ -201,31 +214,51 @@ WBMQTT.prototype.parseMQTTCommand = function (topic, payload) {
 	self.controller.devices.each(function (device) {
 		var deviceTopic = self.createDeviceTopic(device);
 
-		if (topic == deviceTopic + "/" + self.config.topicPostfixStatus) {
-			self.updateDevice(device);
-		}
+		//if (topic == deviceTopic + "/" + self.config.topicPostfixStatus) {
+		//	self.updateDevice(device);
+		//}
 
 		if (topic == deviceTopic + "/" + self.config.topicPostfixSet) {
 
 			var deviceType = device.get('deviceType');
 
-			if (deviceType.startsWith("sensor")) {
-				self.error("Can't perform action on sensor " + device.get("metrics:title"));
-				return;
-			}
+			switch (deviceType){
+				case zWaveDeviceType.battery:
+				case zWaveDeviceType.sensorBinary:
+				case zWaveDeviceType.sensorMultilevel:
+				case zWaveDeviceType.toggleButton:
+					device.performCommand(payload);
+					break;
+				case zWaveDeviceType.doorlock:
+					if (payload === "0") {
+						device.performCommand("close");
+					} else if (payload === "1") {
+						device.performCommand("open");
+					} else {
+						device.performCommand(payload);
+					}
+					break;
+				case zWaveDeviceType.switchBinary:
+					if (payload === "0") {
+						device.performCommand("off");
+					} else if (payload === "1") {
+						device.performCommand("on");
+					} else {
+						device.performCommand(payload);
+					}
+					break;
+				case zWaveDeviceType.thermostat:
+				case zWaveDeviceType.switchMultilevel:
+					var level = parseInt(payload);
+					if (!isNaN(level)){
+						device.performCommand("exact", { level: payload + "%" });
+					} else {
+						device.performCommand(payload);
+					}
+					break;
+				case zWaveDeviceType.thermostat:
 
-			if (deviceType === "switchMultilevel" && payload !== "on" && payload !== "off" && payload !== "stop") {
-				device.performCommand("exact", { level: payload + "%" });
-			} else if (deviceType === "thermostat") {
-				device.performCommand("exact", { level: payload });
-			} else if (deviceType === "switchBinary") {
-				if (payload === "0") {
-					device.performCommand("off");
-				} else if (payload === "1") {
-					device.performCommand("on");
-				}
-			} else {
-				device.performCommand(payload);
+
 			}
 		}
 	});
@@ -241,26 +274,49 @@ WBMQTT.prototype.publishAuxiliaryWBTopics = function () {
 	self.publish(self.prefix + "/meta/name", "Z-Wave", true);
 	self.controller.devices.each(function (device) {
 		var deviceType = device.get('deviceType');
-		var deviceTopic = self.createDeviceTopic(device);
+		var deviceTopic = self.createDeviceTopic(device);		
 		self.publish(deviceTopic + "/meta/z-wave_type", deviceType, true); 
-		if (deviceType.startsWith("sensor")) {
-			self.publish(deviceTopic + "/meta/type", "value", true);
-			self.publish(deviceTopic + "/meta/units", device.get("metrics:scaleTitle"), true);
-			self.updateDevice(device);
-		} else if (deviceType === "switchBinary") {
-			self.publish(deviceTopic + "/meta/type", "switch", true);
-			self.updateDevice(device);
-		} else if (deviceType === "switchMultilevel") {
-			self.publish(deviceTopic + "/meta/type", "range", true);
-			self.publish(deviceTopic + "/meta/max", 99, true);
-			self.updateDevice(device);
-		} else if (deviceType === "thermostat") {
-			self.publish(deviceTopic + "/meta/type", "range", true);
-			self.publish(deviceTopic + "/meta/max", device.get("metrics:max"), true);
-			self.updateDevice(device);
-		} else {
-			self.publish(deviceTopic + "/meta/type", "text", true);
-			self.updateDevice(device);
+
+		switch (deviceType){
+			case zWaveDeviceType.thermostat:
+				self.publish(deviceTopic + "/meta/type", "range", true);
+				self.publish(deviceTopic + "/meta/max", device.get("metrics:max"), true);
+				self.updateDevice(device);
+				break;
+			case zWaveDeviceType.doorlock:
+			case zWaveDeviceType.switchBinary:
+				self.publish(deviceTopic + "/meta/type", "switch", true);
+				self.updateDevice(device);
+				break;
+			case zWaveDeviceType.switchMultilevel:
+				self.publish(deviceTopic + "/meta/type", "range", true);
+				self.publish(deviceTopic + "/meta/max", 99, true);
+				self.updateDevice(device);
+				break;
+			case zWaveDeviceType.sensorBinary:
+				self.publish(deviceTopic + "/meta/type", "switch", true);
+				self.publish(deviceTopic + "/meta/readonly", "true", true);
+				self.updateDevice(device);
+				break;
+			case zWaveDeviceType.battery:
+			case zWaveDeviceType.sensorMultilevel:
+				self.publish(deviceTopic + "/meta/type", "value", true);
+				self.publish(deviceTopic + "/meta/units", device.get("metrics:scaleTitle"), true);
+				self.updateDevice(device);
+				break;
+			case zWaveDeviceType.toggleButton:
+				self.publish(deviceTopic + "/meta/type", "pushbutton", true);
+				self.updateDevice(device);
+				break;
+			default:
+				//switchControl:"switchControl",
+				//sensorMultiline:"sensorMultiline",
+				//sensorDiscrete:"sensorDiscrete",
+				//camera: "camera",
+				//text:"text",
+				//switchRGB:"switchRGB"
+				self.log("Unhandled deviceType " + deviceType);
+				break;
 		}
 	});
 };
@@ -288,3 +344,24 @@ String.prototype.toTopicAffix = function () {
 	return this
 		.replace(/[+#]/g, "");
 };
+
+// ----------------------------------------------------------------------------
+// --- Device types enum
+// ----------------------------------------------------------------------------
+
+const zWaveDeviceType = Object.freeze({
+	battery: "battery",
+	doorlock: "doorlock",
+	thermostat:"thermostat",
+	switchBinary:"switchBinary",
+	switchMultilevel:"switchMultilevel",
+	//switchControl:"switchControl",
+	sensorBinary: "sensorBinary",
+	sensorMultilevel: "sensorMultilevel",
+	//sensorMultiline:"sensorMultiline",
+	//sensorDiscrete:"sensorDiscrete",
+	toggleButton: "toggleButton",
+	//camera: "camera",
+	//text:"text",
+	//switchRGB:"switchRGB"
+});
