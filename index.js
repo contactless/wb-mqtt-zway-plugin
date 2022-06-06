@@ -249,7 +249,7 @@ WBMQTT.prototype.publish = function (topic, value, retained) {
 		var options = {};
 		options.retain = retained;
 
-		self.client.publish(topic, value.toString().trim());
+		self.client.publish(topic, value.toString().trim(),options);
 	}
 };
 
