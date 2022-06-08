@@ -330,43 +330,52 @@ WBMQTT.prototype.removeDeviceValue = function (device) {
 WBMQTT.prototype.getDeviceMetaArray = function (device){
 	var self = this;
 
-	var metaTopicValue = new Array();
+	var deviceType = device.get('deviceType');
+	var deviceMetaTopic = self.getDeviceTopic(device) + "/meta";
 
-	var addMeta = function (topic, value){
-		var item = [topic, value];
-		metaTopicValue.push(item);
+	var metaTopicValue = new Array();
+	var metaJSON = {};
+
+	var addMetaTopicValue = function (topic, value){
+		metaTopicValue.push([deviceMetaTopic + "/" + topic, value]);
+		metaJSON[topic] = value;
 	}
 
-	var deviceType = device.get('deviceType');
-	var deviceTopic = self.getDeviceTopic(device);
-	addMeta(deviceTopic + "/meta/z-wave_type", deviceType); 
-	
+	var addMetaJSON = function (){
+		metaTopicValue.push([deviceMetaTopic, JSON.stringify(metaJSON)]);
+	}
+
+	addMetaTopicValue("z-wave_type", deviceType); 	
 	switch (deviceType){
 		case zWaveDeviceType.thermostat:
-			addMeta(deviceTopic + "/meta/type", "range");
-			addMeta(deviceTopic + "/meta/max", device.get("metrics:max"));
+			addMetaTopicValue("type", "range");
+			addMetaTopicValue("max", device.get("metrics:max"));
 			break;
 		case zWaveDeviceType.doorlock:
 		case zWaveDeviceType.switchBinary:
-			addMeta(deviceTopic + "/meta/type", "switch");
+			addMetaTopicValue("type", "switch");
 			break;
 		case zWaveDeviceType.switchMultilevel:
-			addMeta(deviceTopic + "/meta/type", "range");
-			addMeta(deviceTopic + "/meta/max", 99);
+			addMetaTopicValue("type", "range");
+			// Range [0;99] is caused by "max" command, which set level to 99.
+			// In real case with Fibaro Dimmer 2 max level can be 100.
+			addMetaTopicValue("max", 99);
 			break;
 		case zWaveDeviceType.sensorBinary:
-			addMeta(deviceTopic + "/meta/type", "switch");
-			addMeta(deviceTopic + "/meta/readonly", "true");
+			addMetaTopicValue("type", "switch");
+			addMetaTopicValue("readonly", "true");
 			break;
 		case zWaveDeviceType.battery:
 		case zWaveDeviceType.sensorMultilevel:
-			addMeta(deviceTopic + "/meta/type", "value");
-			addMeta(deviceTopic + "/meta/units", device.get("metrics:scaleTitle"));
+			addMetaTopicValue("type", "value");
+			addMetaTopicValue("units", device.get("metrics:scaleTitle"));
 			break;
 		case zWaveDeviceType.toggleButton:
-			addMeta(deviceTopic + "/meta/type", "pushbutton");
+			addMetaTopicValue("type", "pushbutton");
 			break;
 		default:
+			//This case should be used for
+			//this unsupported device types
 			//switchControl:"switchControl",
 			//sensorMultiline:"sensorMultiline",
 			//sensorDiscrete:"sensorDiscrete",
@@ -376,6 +385,7 @@ WBMQTT.prototype.getDeviceMetaArray = function (device){
 			self.log("Unhandled deviceType " + deviceType);
 			break;
 	};
+	addMetaJSON();
 
 	return metaTopicValue;
 }
@@ -439,13 +449,14 @@ const zWaveDeviceType = Object.freeze({
 	doorlock: "doorlock",
 	thermostat:"thermostat",
 	switchBinary:"switchBinary",
-	switchMultilevel:"switchMultilevel",
-	//switchControl:"switchControl",
+	switchMultilevel:"switchMultilevel",	
 	sensorBinary: "sensorBinary",
 	sensorMultilevel: "sensorMultilevel",
-	//sensorMultiline:"sensorMultiline",
-	//sensorDiscrete:"sensorDiscrete",
 	toggleButton: "toggleButton",
+	//Unsupported device types
+	//switchControl:"switchControl",
+	//sensorMultiline:"sensorMultiline",
+	//sensorDiscrete:"sensorDiscrete",	
 	//camera: "camera",
 	//text:"text",
 	//switchRGB:"switchRGB"
