@@ -1,5 +1,5 @@
 {
-	"author": "Robin Eggenkamp, Pavel Poglazov",
+	"author": "Robin Eggenkamp, Pavel Poglazov, Ekaterina Volkova",
 	"category": "logging",
 	"defaults": {
 		"title": "__m_title__",
@@ -23,7 +23,7 @@
 	"maturity": "stable",
 	"moduleName": "WBMQTT",
 	"singleton": false,
-	"version": "1.4.2",
+	"version": "1.5.0",
 	"repository": {
 		"source": "https://github.com/Edubits/Zway-MQTT",
 		"type": "git"
