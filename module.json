@@ -4,16 +4,13 @@
 	"defaults": {
 		"title": "__m_title__",
 		"description": "__m_descr__",
-		"clientId": "zway",
-		"clientIdRandomize": false,
+		"clientId": "wbzway",
 		"host": "localhost",
 		"port": "1883",
 		"user": "none",
 		"password": "none",
 		"topicPrefix": "/devices/zway/controls",
-		"topicPostfixStatus": "status",
-		"topicPostfixSet": "on",
-		"ignore": true
+		"topicPostfixSet": "on"
 	},
 	"dependencies": [
 		"BaseModule"
@@ -23,7 +20,7 @@
 	"maturity": "stable",
 	"moduleName": "WBMQTT",
 	"singleton": false,
-	"version": "1.5.0",
+	"version": "1.6.0",
 	"repository": {
 		"source": "https://github.com/Edubits/Zway-MQTT",
 		"type": "git"
@@ -34,100 +31,32 @@
 				"label": "__client_id_label__",
 				"order": 1
 			},
-			"clientIdRandomize": {
-				"label": "__client_id_randomize_label__",
-				"helper": "__client_id_randomize_helper__",
-				"order": 2
-			},
 			"host": {
 				"label": "__host_label__",
-				"order": 3
+				"order": 2
 			},
 			"port": {
 				"label": "__port_label__",
-				"order": 4
+				"order": 3
 			},
 			"user": {
 				"label": "__user_label__",
 				"helper": "__user_helper__",
-				"order": 5
+				"order": 4
 			},
 			"password": {
 				"label": "__password_label__",
 				"helper": "__password_helper__",
-				"order": 6
+				"order": 5
 			},
 			"topicPrefix": {
 				"label": "__topic_prefix_label__",
-				"order": 7
-			},
-			"topicPostfixStatus": {
-				"label": "__topic_postfix_status_label__",
-				"helper": "__topic_postfix_status_helper__",
-				"order": 8
+				"order": 6
 			},
 			"topicPostfixSet": {
 				"label": "__topic_postfix_set_label__",
 				"helper": "__topic_postfix_set_helper__",
-				"order": 9
-			},
-			"ignore": {
-				"label": "__ignore_label__",
-				"helper": "__ignore_helper__",
-				"order": 10
-			},
-		 	"publications": {
-				"label": "__publications_label__",
-				"helper": "__publications_helper__",
-				"order": 11,
-				"items": {
-					"fields": {
-						"type": {
-							"label" : "__type_label__",
-							"noneLabel" : "__type_choose__",
-							"optionLabels" : [
-								"__type_tag__",
-								"__type_single__"
-							],
-							"order" : 1,
-							"removeDefaultNone" : false,
-							"type" : "select"
-						},
-
-						"tags" : {
-							"label": "__tags_label__",
-							"helper": "__tags_helper__",
-							"order": 2,
-							"dependencies": {
-								"type": "tag"
-							}
-						},
-
-						"deviceId" : {
-							"label": "__device_id_label__",
-							"datasource" : "namespaces",
-							"field" : "optionLabels",
-							"noneLabel" : "__device_id_choose__",
-							"optionLabels" : "namespaces:devices_switchBinary:deviceName,namespaces:devices_switchMultilevel:deviceName,namespaces:devices_switchRGBW:deviceName,namespaces:devices_sensorBinary:deviceName,namespaces:devices_sensorMultilevel:deviceName",
-							"order" : 2,
-							"removeDefaultNone" : false,
-							"type" : "select",
-							"dependencies" : {
-								"type" : "single"
-							}
-						},
-
-						"topic": {
-							"label": "__topic_label__",
-							"helper": "__topic_helper__",
-							"order": 3
-						},
-						"retained": {
-							"label": "__retained_label__",
-							"order": 4
-						}
-					}
-				}
+				"order": 7
 			}
 		}
 	},
@@ -139,10 +68,6 @@
 				"type": "string",
 				"required": true
 			},
-			"clientIdRandomize": {
-				"type": "boolean",
-				"required": true
-			},
 			"host": {
 				"type": "string",
 				"required": true
@@ -163,66 +88,10 @@
 				"type": "string",
 				"required": true
 			},
-			"topicPostfixStatus": {
-				"type": "string",
-				"required": true
-			},
 			"topicPostfixSet": {
 				"type": "string",
 				"required": true
-			},
-			"ignore": {
-				"type": "boolean",
-				"required": true
-			},
-			"publications": {
-				"type": "array",
-				"items": {
-					"type": "object",
-					"properties": {
-						"type" : {
-							"type" : "string",
-							"enum" : [
-								"tag",
-								"single"
-							],
-							"required" : true
-						},
-
-						"tags": {
-							"type": "array",
-							"items": {
-								"required": true,
-								"type": "string"
-							},
-							"minItems": 1,
-							"uniqueItems": true,
-							"dependencies": "type"
-						},
-
-						"deviceId": {
-							"type": "string",
-							"field": "enum",
-							"datasource": "namespaces",
-							"enum": "namespaces:devices_switchBinary:deviceId,namespaces:devices_switchMultilevel:deviceId,namespaces:devices_switchRGBW:deviceId,namespaces:devices_sensorBinary:deviceId,namespaces:devices_sensorMultilevel:deviceId",
-							"required": true,
-							"dependencies": "type"
-						},
-
-						"topic": {
-							"type": "string",
-							"required": true,
-							"dependencies": "type"
-						},
-						"retained": {
-							"type": "boolean",
-							"required": true,
-							"dependencies": "type"
-						}
-					}
-				}
 			}
-
 		}
 	}
 }
