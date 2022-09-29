@@ -82,7 +82,7 @@ WBMQTT.prototype.stop = function () {
 
 	// Cleanup
 	self.isStopping = true;
-	self.client.close();
+	self.client.disconnect();
 
 	// Clear any active reconnect timers
 	if (self.reconnect_timer) {
