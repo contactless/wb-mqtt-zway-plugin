@@ -241,7 +241,7 @@ WBMQTT.prototype.publish = function (topic, value, retained) {
 	var self = this;
 
 	if (self.client && self.isConnected) {
-		self.client.publish(topic, value.toString().trim());
+		self.client.publish(topic, value.toString().trim(), retained);
 	}
 };
 
