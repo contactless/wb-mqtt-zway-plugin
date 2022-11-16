@@ -58,8 +58,9 @@ WBMQTT.prototype.init = function (config) {
 	if (self.config.user != "none" && self.config.password != "none") {
 		self.client = new mqtt(self.config.host, parseInt(self.config.port), self.config.user, self.config.password, self.config.clientId);
 	}
-	else
+	else{
 		self.client = new mqtt(self.config.host, parseInt(self.config.port), self.config.clientId);
+  }
 
 	self.client.ondisconnect = function () { self.onDisconnect(); };
 	self.client.onconnect = function () { self.onConnect(); };
@@ -337,7 +338,7 @@ WBMQTT.prototype.getDeviceMetaArray = function (device){
 		metaTopicValue.push([deviceMetaTopic, JSON.stringify(metaJSON)]);
 	}
 
-	addMetaTopicValue("z-wave_type", deviceType); 	
+	addMetaTopicValue("z-wave_type", deviceType);
 	switch (deviceType){
 		case zWaveDeviceType.thermostat:
 			addMetaTopicValue("type", "range");
@@ -441,14 +442,14 @@ const zWaveDeviceType = Object.freeze({
 	doorlock: "doorlock",
 	thermostat:"thermostat",
 	switchBinary:"switchBinary",
-	switchMultilevel:"switchMultilevel",	
+	switchMultilevel:"switchMultilevel",
 	sensorBinary: "sensorBinary",
 	sensorMultilevel: "sensorMultilevel",
 	toggleButton: "toggleButton",
 	//Unsupported device types
 	//switchControl:"switchControl",
 	//sensorMultiline:"sensorMultiline",
-	//sensorDiscrete:"sensorDiscrete",	
+	//sensorDiscrete:"sensorDiscrete",
 	//camera: "camera",
 	//text:"text",
 	//switchRGB:"switchRGB"
