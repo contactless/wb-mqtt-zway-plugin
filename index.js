@@ -67,13 +67,8 @@ WBMQTT.prototype.init = function (config) {
 	self.client.onmessage = function (topic, payload) { self.onMessage(topic, payload); };
 
 	self.updateCallback = _.bind(self.publishDeviceValue, self);
-	self.controller.devices.on("change:metrics:level", self.updateCallback);
-
 	self.addСallback = _.bind(self.addDevice, self);
-	self.controller.devices.on('created', self.addСallback);
-
-	self.removeСallback = _.bind(self.removeDevice, self);
-	self.controller.devices.on('removed', self.removeСallback);
+	self.removeСallback = _.bind(self.removeDevice, self);	
 
 	self.client.connect();
 };
@@ -101,6 +96,10 @@ WBMQTT.prototype.stop = function () {
 WBMQTT.prototype.onConnect = function(){
 	var self = this;
 	self.log("Connected to " + self.config.host + " as " + self.config.clientId);
+
+	self.controller.devices.on("change:metrics:level", self.updateCallback);
+	self.controller.devices.on('created', self.addСallback);
+	self.controller.devices.on('removed', self.removeСallback);
 
 	self.isConnected = true;
 	self.isConnecting = false;
