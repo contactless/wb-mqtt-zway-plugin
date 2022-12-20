@@ -5,31 +5,18 @@ values based on subscribed topics.
 
 # Installation
 
-1. Make sure that the [BaseModule](https://github.com/maros/Zway-BaseModule) is installed prior to installing this 
-module.
-2. Install module:
+1. Install module:
 ```shell
         # Execute on Wiren Board
         apt install git
         cd /opt/z-way-server/automation/userModules
-        git clone https://github.com/contactless/wb-mqtt-zway-plugin.git MQTT
+        git clone https://github.com/wirenboard/wb-mqtt-zway-plugin.git WBMQTT
 ```
-3. To update to last version in this repo:
+1. To update to last version in this repo:
 ```shell
-        cd /opt/z-way-server/automation/userModules/MQTT
+        cd /opt/z-way-server/automation/userModules/WBMQTT
         git pull
 ```
 # Usage
 
 Add an instance of the app through Z-Wave interface (Menu - Apps - Local Apps). No configuration needed. All configuration fields are skipped.
-
-If new device was added to Z-Way later, restart module with:
-```shell
-service z-way-server restart
-```
-
-# Acknowledgements
-
-I want to thank @Edubits for developing this module. It's only slightly simplified to work with Wiren Board. His module can be found at https://github.com/Edubits/Zway-MQTT.
-
-I want to thank @goodfield for finding and fixing a fully JavaScript MQTTClient which I could use in this module as well. His module can be found at https://github.com/goodfield/zway-mqtt.
