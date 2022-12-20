@@ -45,7 +45,6 @@ WBMQTT.prototype.init = function (config) {
 	WBMQTT.super_.prototype.init.call(this, config);
 
 	var self = this;
-	self.prefix = "/devices/z-way";
 
 	// Default counters
 	self.reconnectCount = 0;
@@ -106,11 +105,11 @@ WBMQTT.prototype.onConnect = function(){
 	self.isStopping = false;
 	self.reconnectCount = 0;
 
-	self.client.subscribe(self.prefix + "/#");
+	self.client.subscribe(self.config.topicPrefix + "/#");;
 
 	// Publish connected notification
-	self.publish(self.prefix + "/connected", "2", true);
-	self.publish(self.prefix + "/meta/name", "Z-Wave", true);
+	self.publish(self.config.topicPrefix + "/connected", "2", true);
+	self.publish(self.config.topicPrefix + "/meta/name", "Z-Wave", true);
 
 	self.controller.devices.each(function (device){
 		self.publishDeviceMeta(device);
@@ -247,7 +246,7 @@ WBMQTT.prototype.publish = function (topic, value, retained) {
 
 WBMQTT.prototype.getDeviceTopic = function (device) {
 	var self = this;
-	return self.prefix + "/controls/" + device.get("metrics:title").toTopicAffix() + " " + device.get("id").split("_").pop().toTopicAffix();
+	return self.config.topicPrefix + "/controls/" + device.get("metrics:title").toTopicAffix() + " " + device.get("id").split("_").pop().toTopicAffix();
 };
 
 WBMQTT.prototype.getDeviceValueArray = function (device){
