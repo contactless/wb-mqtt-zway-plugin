@@ -108,7 +108,7 @@ WBMQTT.prototype.onConnect = function(){
 	self.client.subscribe(self.config.topicPrefix + "/#");;
 
 	// Publish connected notification
-	self.publish(self.config.topicPrefix + "/connected", "2", true);
+	self.publish(self.config.topicPrefix + "/connected", "1", true);
 	self.publish(self.config.topicPrefix + "/meta/name", "Z-Wave", true);
 
 	self.controller.devices.each(function (device){
@@ -360,6 +360,7 @@ WBMQTT.prototype.getDeviceMetaArray = function (device){
 		case zWaveDeviceType.sensorMultilevel:
 			addMetaTopicValue("type", "value");
 			addMetaTopicValue("units", device.get("metrics:scaleTitle"));
+			addMetaTopicValue("precision", self.config.precision)
 			break;
 		case zWaveDeviceType.toggleButton:
 			addMetaTopicValue("type", "pushbutton");
