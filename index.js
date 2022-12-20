@@ -21,9 +21,20 @@ function WBMQTT (id, controller) {
 	WBMQTT.super_.call(this, id, controller);
 }
 
-inherits(WBMQTT, BaseModule);
+inherits(WBMQTT, AutomationModule);
 
 _module = WBMQTT;
+
+WBMQTT.prototype.log = function (message) {
+	if (undefined === message) return;
+	console.log('[' + this.constructor.name + '-' + this.id + '] ' + message);
+};
+
+WBMQTT.prototype.error = function (message) {
+	if (undefined === message) message = 'An unknown error occured';
+	var error = new Error(message);
+	console.error('[' + this.constructor.name + '_' + this.id + '] ' + error.stack);
+};
 
 // ----------------------------------------------------------------------------
 // --- Module instance initialized
@@ -36,9 +47,6 @@ WBMQTT.prototype.init = function (config) {
 	var self = this;
 	self.prefix = "/devices/z-way";
 
-	executeFile(self.moduleBasePath() + "/lib/buffer.js");
-	executeFile(self.moduleBasePath() + "/lib/mqtt.js");
-
 	// Default counters
 	self.reconnectCount = 0;
 	self.isStopping = false;
@@ -47,29 +55,21 @@ WBMQTT.prototype.init = function (config) {
 
 	// Init MQTT client
 
-	var mqttOptions = {
-		client_id: self.config.clientId,
-		will_flag: true,
-		will_topic: self.prefix + "/connected",
-		will_message: "0",
-		will_retain: true
-	};
+	if (self.config.user != "none" && self.config.password != "none") {
+		self.client = new mqtt(self.config.host, parseInt(self.config.port), self.config.user, self.config.password, self.config.clientId);
+	}
+	else{
+		self.client = new mqtt(self.config.host, parseInt(self.config.port), self.config.clientId);
+  }
 
-	if (self.config.clientIdRandomize)
-		client_id += "-" + Math.random().toString(16).substr(2, 6);
+	self.client.ondisconnect = function () { self.onDisconnect(); };
+	self.client.onconnect = function () { self.onConnect(); };
+	self.client.onmessage = function (topic, payload) { self.onMessage(topic, payload); };
 
-	if (self.config.user != "none")
-		mqttOptions.username = self.config.user;
+	self.updateCallback = _.bind(self.publishDeviceValue, self);
+	self.addСallback = _.bind(self.addDevice, self);
+	self.removeСallback = _.bind(self.removeDevice, self);	
 
-	if (self.config.password != "none")
-		mqttOptions.password = self.config.password;
-
-	self.client = new WBMQTTClient(self.config.host, parseInt(self.config.port), mqttOptions);
-
-	self.client.onLog(function (msg) { self.log(msg.toString()); });
-	self.client.onError(function (error) { self.error(error.toString()); });
-	self.client.onDisconnect(function () { self.onDisconnect(); });
-	self.client.onConnect(function () { self.onConnect();});
 	self.client.connect();
 };
 
@@ -78,7 +78,7 @@ WBMQTT.prototype.stop = function () {
 
 	// Cleanup
 	self.isStopping = true;
-	self.client.close();
+	self.client.disconnect();
 
 	// Clear any active reconnect timers
 	if (self.reconnect_timer) {
@@ -95,14 +95,18 @@ WBMQTT.prototype.stop = function () {
 
 WBMQTT.prototype.onConnect = function(){
 	var self = this;
-	self.log("Connected to " + self.config.host + " as " + self.client.options.client_id);
+	self.log("Connected to " + self.config.host + " as " + self.config.clientId);
+
+	self.controller.devices.on("change:metrics:level", self.updateCallback);
+	self.controller.devices.on('created', self.addСallback);
+	self.controller.devices.on('removed', self.removeСallback);
 
 	self.isConnected = true;
 	self.isConnecting = false;
 	self.isStopping = false;
 	self.reconnectCount = 0;
 
-	self.client.subscribe(self.prefix + "/#", {}, _.bind(self.onMessage, self));
+	self.client.subscribe(self.prefix + "/#");
 
 	// Publish connected notification
 	self.publish(self.prefix + "/connected", "2", true);
@@ -112,16 +116,6 @@ WBMQTT.prototype.onConnect = function(){
 		self.publishDeviceMeta(device);
 		self.publishDeviceValue(device);
 	});
-
-	self.updateCallback = _.bind(self.publishDeviceValue, self);
-	self.controller.devices.on("change:metrics:level", self.updateCallback);
-
-	self.addСallback = _.bind(self.addDevice, self);
-	self.controller.devices.on('created', self.addСallback);
-
-	self.removeСallback = _.bind(self.removeDevice, self);
-	self.controller.devices.on('removed', self.removeСallback);
-
 }
 
 WBMQTT.prototype.addDevice = function (device){
@@ -184,7 +178,8 @@ WBMQTT.prototype.onDisconnect = function () {
 
 WBMQTT.prototype.onMessage = function (topic, payload) {
 	var self = this;
-	var topic = topic.toString();
+	//var topic = topic.toString();
+	var payload = byteArrayToString(payload);
 
 	if (!topic.endsWith(self.config.topicPostfixSet))
 		return;
@@ -245,11 +240,8 @@ WBMQTT.prototype.onMessage = function (topic, payload) {
 WBMQTT.prototype.publish = function (topic, value, retained) {
 	var self = this;
 
-	if (self.client && self.client.connected) {
-		var options = {};
-		options.retain = retained;
-
-		self.client.publish(topic, value.toString().trim(),options);
+	if (self.client && self.isConnected) {
+		self.client.publish(topic, value.toString().trim(), retained);
 	}
 };
 
@@ -345,7 +337,7 @@ WBMQTT.prototype.getDeviceMetaArray = function (device){
 		metaTopicValue.push([deviceMetaTopic, JSON.stringify(metaJSON)]);
 	}
 
-	addMetaTopicValue("z-wave_type", deviceType); 	
+	addMetaTopicValue("z-wave_type", deviceType);
 	switch (deviceType){
 		case zWaveDeviceType.thermostat:
 			addMetaTopicValue("type", "range");
@@ -449,14 +441,14 @@ const zWaveDeviceType = Object.freeze({
 	doorlock: "doorlock",
 	thermostat:"thermostat",
 	switchBinary:"switchBinary",
-	switchMultilevel:"switchMultilevel",	
+	switchMultilevel:"switchMultilevel",
 	sensorBinary: "sensorBinary",
 	sensorMultilevel: "sensorMultilevel",
 	toggleButton: "toggleButton",
 	//Unsupported device types
 	//switchControl:"switchControl",
 	//sensorMultiline:"sensorMultiline",
-	//sensorDiscrete:"sensorDiscrete",	
+	//sensorDiscrete:"sensorDiscrete",
 	//camera: "camera",
 	//text:"text",
 	//switchRGB:"switchRGB"

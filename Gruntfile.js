@@ -20,7 +20,7 @@ module.exports = function(grunt) {
                 },
                 files: [
                     {
-                        src: ['index.js', 'module.json', 'README.md', 'htdocs/**', 'lang/**', 'lib/**'],
+                        src: ['index.js', 'module.json', 'README.md', 'htdocs/**', 'lang/**'],
                         dest: ''
                     }
                 ]
