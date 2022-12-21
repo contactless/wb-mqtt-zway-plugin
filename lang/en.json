@@ -13,5 +13,7 @@
 	"topic_postfix_set_label": "Topic postfix for setting the value",
 	"topic_postfix_set_helper": "Publish a message to the set-topic of a device to set it's value",
 	"precision_label": "Sensor value precision",
-	"precision_helper": "Set fractional value for WirenBoard web interface"
+	"precision_helper": "Set fractional value for WirenBoard web interface",
+	"debug_label": "Debug",
+	"debug_helper": "Enable or disable extended debug output"
 }

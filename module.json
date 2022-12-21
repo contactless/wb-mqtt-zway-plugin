@@ -11,7 +11,8 @@
 		"password": "none",
 		"topicPrefix": "/devices/zway",
 		"topicPostfixSet": "on",
-		"precision": 0.01
+		"precision": 0.01,
+		"debug":false
 	},
 	"homepage": "https://github.com/wirenboard/wb-mqtt-zway-plugin",
 	"icon": "icon.png",
@@ -60,6 +61,11 @@
 				"label": "__precision_label__",
 				"helper": "__precision_helper__",
 				"order": 8
+			},
+			"debug": {
+				"label": "__debug_label__",
+				"helper": "__debug_helper__",
+				"order": 9
 			}
 		}
 	},
@@ -97,6 +103,10 @@
 			},
 			"precision": {
 				"type": "number",
+				"required": true
+			},
+			"debug":{
+				"type": "boolean",
 				"required": true
 			}
 		}
