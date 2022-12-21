@@ -117,7 +117,7 @@ WBMQTT.prototype.onConnect = function(){
 	self.isStopping = false;
 	self.reconnectCount = 0;
 
-	self.client.subscribe(self.config.topicPrefix + "/#");;
+	self.client.subscribe(self.config.topicPrefix + "/controls/+/" + self.config.topicPostfixSet);
 
 	// Publish connected notification
 	self.publish(self.config.topicPrefix + "/connected", "1", true);
