@@ -328,8 +328,12 @@ WBMQTT.prototype.getDeviceMetaArray = function (device){
 	var metaJSON = {};
 
 	var addMetaTopicValue = function (topic, value){
-		metaTopicValue.push([deviceMetaTopic + "/" + topic, value]);
 		metaJSON[topic] = value;
+		//For old convention compatibility
+		if (topic == "readonly"){
+			value = (value == "true")?"1":"0"
+		}
+		metaTopicValue.push([deviceMetaTopic + "/" + topic, value]);		
 	}
 
 	var addMetaJSON = function (){
