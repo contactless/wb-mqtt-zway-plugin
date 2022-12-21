@@ -1,9 +1,8 @@
 /*** MQTT Z-Way HA module ****************************************************
 
-Version: 1.3
-(c) Robin Eggenkamp, 2016
+Version: 1.6.1
 -----------------------------------------------------------------------------
-Author: Robin Eggenkamp <robin@edubits.nl>
+Author: Robin Eggenkamp <robin@edubits.nl>, Ekaterina Volkova <ekaterina.volkova@wirenboard.ru>
 Description:
    Publishes the status of devices to a Wiren Board MQTT topic and is able
    to set values based on subscribed topics
