@@ -237,7 +237,7 @@ WBMQTT.prototype.onMessage = function (topic, payload) {
 				case zWaveDeviceType.switchMultilevel:
 					var level = parseInt(payload);
 					if (!isNaN(level)){
-						device.performCommand("exact", { level: payload + "%" });
+						device.performCommand("exact", { level: payload});
 					} else {
 						device.performCommand(payload);
 					}
