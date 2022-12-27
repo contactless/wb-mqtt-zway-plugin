@@ -191,7 +191,7 @@ WBMQTT.prototype.onMessage = function (topic, payload) {
 	var payload = byteArrayToString(payload);
 
 	if (!topic.endsWith(self.config.topicPostfixSet)){
-		self.log("New message topic doesn't ends on topicPostfixSet", LoggingLevel.INFO);
+		self.log("New message topic does not end on topicPostfixSet", LoggingLevel.INFO);
 		self.log("Topic " + topic, LoggingLevel.INFO);
 		self.log("topicPostfixSet " + self.config.topicPostfixSet, LoggingLevel.INFO);
 		return;
@@ -243,7 +243,7 @@ WBMQTT.prototype.onMessage = function (topic, payload) {
 					}
 					break;
 				default:
-					self.log("OnMessage callback does not support " + deviceType + "device type", LoggingLevel.INFO);
+					self.log("OnMessage callback does not support " + deviceType + " device type", LoggingLevel.INFO);
 					break;
 			}
 		}
