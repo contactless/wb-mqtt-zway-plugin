@@ -9,15 +9,17 @@
 		"port": "1883",
 		"user": "none",
 		"password": "none",
-		"topicPrefix": "/devices/zway/controls",
-		"topicPostfixSet": "on"
+		"topicPrefix": "/devices/zway",
+		"topicPostfixSet": "on",
+		"precision": 0.01,
+		"debug":false
 	},
 	"homepage": "https://github.com/wirenboard/wb-mqtt-zway-plugin",
 	"icon": "icon.png",
 	"maturity": "stable",
 	"moduleName": "WBMQTT",
 	"singleton": false,
-	"version": "1.6.0",
+	"version": "1.6.1",
 	"repository": {
 		"source": "https://github.com/wirenboard/wb-mqtt-zway-plugin",
 		"type": "git"
@@ -54,6 +56,16 @@
 				"label": "__topic_postfix_set_label__",
 				"helper": "__topic_postfix_set_helper__",
 				"order": 7
+			},
+			"precision": {
+				"label": "__precision_label__",
+				"helper": "__precision_helper__",
+				"order": 8
+			},
+			"debug": {
+				"label": "__debug_label__",
+				"helper": "__debug_helper__",
+				"order": 9
 			}
 		}
 	},
@@ -87,6 +99,14 @@
 			},
 			"topicPostfixSet": {
 				"type": "string",
+				"required": true
+			},
+			"precision": {
+				"type": "number",
+				"required": true
+			},
+			"debug":{
+				"type": "boolean",
 				"required": true
 			}
 		}

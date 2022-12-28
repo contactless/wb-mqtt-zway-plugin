@@ -1,9 +1,8 @@
 /*** MQTT Z-Way HA module ****************************************************
 
-Version: 1.3
-(c) Robin Eggenkamp, 2016
+Version: 1.6.1
 -----------------------------------------------------------------------------
-Author: Robin Eggenkamp <robin@edubits.nl>
+Author: Robin Eggenkamp <robin@edubits.nl>, Ekaterina Volkova <ekaterina.volkova@wirenboard.ru>
 Description:
    Publishes the status of devices to a Wiren Board MQTT topic and is able
    to set values based on subscribed topics
@@ -25,9 +24,21 @@ inherits(WBMQTT, AutomationModule);
 
 _module = WBMQTT;
 
-WBMQTT.prototype.log = function (message) {
+WBMQTT.prototype.log = function (message, level) {
+	var self = this;
+
 	if (undefined === message) return;
-	console.log('[' + this.constructor.name + '-' + this.id + '] ' + message);
+	switch (level){
+		case LoggingLevel.DEBUG:
+			if (!self.config.debug){
+				return;
+			}			
+		case LoggingLevel.INFO:
+			console.log('[' + this.constructor.name + '-' + this.id + '] ' + message);
+			break;
+		default:
+			break;
+	}
 };
 
 WBMQTT.prototype.error = function (message) {
@@ -45,7 +56,6 @@ WBMQTT.prototype.init = function (config) {
 	WBMQTT.super_.prototype.init.call(this, config);
 
 	var self = this;
-	self.prefix = "/devices/z-way";
 
 	// Default counters
 	self.reconnectCount = 0;
@@ -95,7 +105,7 @@ WBMQTT.prototype.stop = function () {
 
 WBMQTT.prototype.onConnect = function(){
 	var self = this;
-	self.log("Connected to " + self.config.host + " as " + self.config.clientId);
+	self.log("Connected to " + self.config.host + " as " + self.config.clientId, LoggingLevel.INFO);
 
 	self.controller.devices.on("change:metrics:level", self.updateCallback);
 	self.controller.devices.on('created', self.addСallback);
@@ -106,11 +116,11 @@ WBMQTT.prototype.onConnect = function(){
 	self.isStopping = false;
 	self.reconnectCount = 0;
 
-	self.client.subscribe(self.prefix + "/#");
+	self.client.subscribe(self.config.topicPrefix + "/controls/+/" + self.config.topicPostfixSet);
 
 	// Publish connected notification
-	self.publish(self.prefix + "/connected", "2", true);
-	self.publish(self.prefix + "/meta/name", "Z-Wave", true);
+	self.publish(self.config.topicPrefix + "/connected", "1", true);
+	self.publish(self.config.topicPrefix + "/meta/name", "Z-Wave", true);
 
 	self.controller.devices.each(function (device){
 		self.publishDeviceMeta(device);
@@ -121,7 +131,7 @@ WBMQTT.prototype.onConnect = function(){
 WBMQTT.prototype.addDevice = function (device){
 	var self = this;
 
-	self.log('Add new device');
+	self.log("Add new device Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.INFO);
 	self.publishDeviceMeta(device);
 	self.publishDeviceValue(device);
 };
@@ -129,7 +139,7 @@ WBMQTT.prototype.addDevice = function (device){
 WBMQTT.prototype.removeDevice = function (device){
 	var self = this;
 
-	self.log('Remove device');
+	self.log("Remove device Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.INFO);
 	self.removeDeviceMeta(device);
 	self.removeDeviceValue(device);
 };
@@ -148,7 +158,7 @@ WBMQTT.prototype.onDisconnect = function () {
 	if (self.isConnecting === true) self.isConnecting = false;
 
 	if (self.isStopping) {
-		self.log("Disconnected due to module stop, not reconnecting");
+		self.log("Disconnected due to module stop, not reconnecting", LoggingLevel.INFO);
 		return;
 	}
 
@@ -157,42 +167,46 @@ WBMQTT.prototype.onDisconnect = function () {
 	// Setup a connection retry
 	self.reconnect_timer = setTimeout(function() {
 		if (self.isConnecting === true) {
-			self.log("Connection already in progress, cancelling reconnect");
+			self.log("Connection already in progress, cancelling reconnect", LoggingLevel.INFO);
 			return;
 		}
 
 		if (self.isConnected === true) {
-			self.log("Connection already open, cancelling reconnect");
+			self.log("Connection already open, cancelling reconnect", LoggingLevel.INFO);
 			return;
 		}
 
-		self.log("Trying to reconnect (" + self.reconnectCount + ")");
+		self.log("Trying to reconnect (" + self.reconnectCount + ")", LoggingLevel.INFO);
 
 		self.reconnectCount++;
 		self.isConnecting = true;
 		self.client.connect();
 
-		self.log("Reconnect attempt finished");
+		self.log("Reconnect attempt finished", LoggingLevel.INFO);
 	}, Math.min(self.reconnectCount * 1000, 60000));
 };
 
 WBMQTT.prototype.onMessage = function (topic, payload) {
 	var self = this;
-	//var topic = topic.toString();
 	var payload = byteArrayToString(payload);
 
-	if (!topic.endsWith(self.config.topicPostfixSet))
+	if (!topic.endsWith(self.config.topicPostfixSet)){
+		self.log("New message topic does not end on topicPostfixSet", LoggingLevel.INFO);
+		self.log("Topic " + topic, LoggingLevel.INFO);
+		self.log("topicPostfixSet " + self.config.topicPostfixSet, LoggingLevel.INFO);
 		return;
+	}
 
+	var success = false;
 	self.controller.devices.each(function (device) {
 		var deviceTopic = self.getDeviceTopic(device);
 
 		if (topic == deviceTopic + "/" + self.config.topicPostfixSet) {
-
+			success = true;
 			var deviceType = device.get('deviceType');
 
-			self.log("New message " + payload);
-			self.log("DeviceType " + deviceType);
+			self.log("New message topic" + topic + " payload " + payload, LoggingLevel.DEBUG);
+			self.log("Found device Id:" + device.get("id") + " DeviceType:" + device.get("deviceType"), LoggingLevel.DEBUG);
 
 			switch (deviceType){
 				case zWaveDeviceType.battery:
@@ -223,17 +237,21 @@ WBMQTT.prototype.onMessage = function (topic, payload) {
 				case zWaveDeviceType.switchMultilevel:
 					var level = parseInt(payload);
 					if (!isNaN(level)){
-						device.performCommand("exact", { level: payload + "%" });
+						device.performCommand("exact", { level: payload});
 					} else {
 						device.performCommand(payload);
 					}
 					break;
 				default:
-					self.log("OnMessage callback does not support " + deviceType + "device type");
+					self.log("OnMessage callback does not support " + deviceType + " device type", LoggingLevel.INFO);
 					break;
 			}
 		}
 	});
+
+	if (!success){
+		self.log("Can't find the device with topic " + topic, LoggingLevel.INFO);
+	}
 };
 
 
@@ -247,7 +265,7 @@ WBMQTT.prototype.publish = function (topic, value, retained) {
 
 WBMQTT.prototype.getDeviceTopic = function (device) {
 	var self = this;
-	return self.prefix + "/controls/" + device.get("metrics:title").toTopicAffix() + " " + device.get("id").split("_").pop().toTopicAffix();
+	return self.config.topicPrefix + "/controls/" + device.get("metrics:title").toTopicAffix() + " " + device.get("id").split("_").pop().toTopicAffix();
 };
 
 WBMQTT.prototype.getDeviceValueArray = function (device){
@@ -262,7 +280,7 @@ WBMQTT.prototype.getDeviceValueArray = function (device){
 	};
 
 	if (!(deviceType in zWaveDeviceType)){
-		self.log("Unhandled device type " + deviceType);
+		self.log("Can't get device value, unknown type Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.INFO);
 		return deviceTopicValue;
 	}
 
@@ -296,11 +314,12 @@ WBMQTT.prototype.publishDeviceValue = function (device) {
 
 	var deviceArray = self.getDeviceValueArray(device);
 
-	self.log("Publish Device Value " + device.get("deviceType"));
+	self.log("Publish Device Value Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.DEBUG);
 
 	deviceArray.forEach(function (item){
 		var value = item.pop();
 		var topic = item.pop();
+		self.log(topic + " " + value, LoggingLevel.DEBUG);
 		self.publish(topic,value, true);
 	});
 };
@@ -310,11 +329,12 @@ WBMQTT.prototype.removeDeviceValue = function (device) {
 
 	var deviceArray = self.getDeviceValueArray(device);
 
-	self.log("Remove Device Value " + device.get("deviceType"));
+	self.log("Remove Device Value Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.DEBUG);
 
 	deviceArray.forEach(function (item){
 		var value = item.pop();
 		var topic = item.pop();
+		self.log(topic + " " + value, LoggingLevel.DEBUG);
 		self.publish(topic,"", true);
 	});
 };
@@ -329,8 +349,12 @@ WBMQTT.prototype.getDeviceMetaArray = function (device){
 	var metaJSON = {};
 
 	var addMetaTopicValue = function (topic, value){
-		metaTopicValue.push([deviceMetaTopic + "/" + topic, value]);
 		metaJSON[topic] = value;
+		//For old convention compatibility
+		if (topic == "readonly"){
+			value = (value == "true")?"1":"0"
+		}
+		metaTopicValue.push([deviceMetaTopic + "/" + topic, value]);		
 	}
 
 	var addMetaJSON = function (){
@@ -361,6 +385,7 @@ WBMQTT.prototype.getDeviceMetaArray = function (device){
 		case zWaveDeviceType.sensorMultilevel:
 			addMetaTopicValue("type", "value");
 			addMetaTopicValue("units", device.get("metrics:scaleTitle"));
+			addMetaTopicValue("precision", self.config.precision)
 			break;
 		case zWaveDeviceType.toggleButton:
 			addMetaTopicValue("type", "pushbutton");
@@ -374,7 +399,7 @@ WBMQTT.prototype.getDeviceMetaArray = function (device){
 			//camera: "camera",
 			//text:"text",
 			//switchRGB:"switchRGB"
-			self.log("Unhandled deviceType " + deviceType);
+			self.log("Can't get device meta, unsupported type Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.INFO);
 			break;
 	};
 	addMetaJSON();
@@ -385,7 +410,7 @@ WBMQTT.prototype.getDeviceMetaArray = function (device){
 WBMQTT.prototype.publishDeviceMeta = function (device){
 	var self = this;
 
-	self.log("Publish Device Meta " + device.get("deviceType"));
+	self.log("Publish Device Meta Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.DEBUG);
 
 	var metaArray = self.getDeviceMetaArray(device);
 	metaArray.forEach(function (item){
@@ -399,7 +424,7 @@ WBMQTT.prototype.removeDeviceMeta = function (device){
 	var self = this;
 	var metaArray = self.getDeviceMetaArray(device);
 
-	self.log("Remove Device Meta " + device.get("deviceType"));
+	self.log("Remove Device Meta Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.DEBUG);
 
 	metaArray.forEach(function (item){
 		var value = item.pop();
@@ -453,3 +478,6 @@ const zWaveDeviceType = Object.freeze({
 	//text:"text",
 	//switchRGB:"switchRGB"
 });
+
+const LoggingLevel = Object.freeze({ INFO: "INFO", 
+									 DEBUG: "DEBUG"});
