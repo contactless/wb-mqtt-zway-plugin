@@ -21,7 +21,7 @@
 	"homepage": "https://github.com/wirenboard/wb-mqtt-zway-plugin",
 	"icon": "icon.png",
 	"maturity": "stable",
-	"moduleName": "WBMQTT",
+	"moduleName": "WBMQTT150",
 	"singleton": false,
 	"version": "1.5.0",
 	"repository": {
