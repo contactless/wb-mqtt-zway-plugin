@@ -1,5 +1,5 @@
 {
-	"m_title" : "Wiren Board MQTT Integration Old Stretch Releases",
+	"m_title" : "Wiren Board MQTT Integration",
 	"m_descr" : "This version of the plugin can only be run under old stable Wiren Board releases (earlier than wb-2304). Please install latest Wiren Board software to use new version of the plugin (search Wiren Board MQTT Integration in application market to find it). To more information, refer to Wiren Board Wiki (https://wirenboard.com/wiki/Z-Wave). Publishes the status of devices to a Wiren Board MQTT topic and is able to set values based on subscribed topics.",
 
 	"client_id_label": "Client ID",
