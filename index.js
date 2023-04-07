@@ -16,7 +16,7 @@ Description:
 // --- Class definition, inheritance and setup
 // ----------------------------------------------------------------------------
 
-function WBMQTT (id, controller) {
+function WBMQTT(id, controller) {
 	WBMQTT.super_.call(this, id, controller);
 }
 
@@ -28,11 +28,11 @@ WBMQTT.prototype.log = function (message, level) {
 	var self = this;
 
 	if (undefined === message) return;
-	switch (level){
+	switch (level) {
 		case LoggingLevel.DEBUG:
-			if (!self.config.debug){
+			if (!self.config.debug) {
 				return;
-			}			
+			}
 		case LoggingLevel.INFO:
 			console.log('[' + this.constructor.name + '-' + this.id + '] ' + message);
 			break;
@@ -64,13 +64,12 @@ WBMQTT.prototype.init = function (config) {
 	self.isConnecting = true;
 
 	// Init MQTT client
-
 	if (self.config.user != "none" && self.config.password != "none") {
 		self.client = new mqtt(self.config.host, parseInt(self.config.port), self.config.user, self.config.password, self.config.clientId);
 	}
-	else{
+	else {
 		self.client = new mqtt(self.config.host, parseInt(self.config.port), self.config.clientId);
-  }
+	}
 
 	self.client.ondisconnect = function () { self.onDisconnect(); };
 	self.client.onconnect = function () { self.onConnect(); };
@@ -78,7 +77,7 @@ WBMQTT.prototype.init = function (config) {
 
 	self.updateCallback = _.bind(self.publishDeviceValue, self);
 	self.addСallback = _.bind(self.addDevice, self);
-	self.removeСallback = _.bind(self.removeDevice, self);	
+	self.removeСallback = _.bind(self.removeDevice, self);
 
 	self.client.connect();
 };
@@ -122,13 +121,13 @@ WBMQTT.prototype.onConnect = function(){
 	self.publish(self.config.topicPrefix + "/connected", "1", true);
 	self.publish(self.config.topicPrefix + "/meta/name", "Z-Wave", true);
 
-	self.controller.devices.each(function (device){
+	self.controller.devices.each(function (device) {
 		self.publishDeviceMeta(device);
 		self.publishDeviceValue(device);
 	});
 }
 
-WBMQTT.prototype.addDevice = function (device){
+WBMQTT.prototype.addDevice = function (device) {
 	var self = this;
 
 	self.log("Add new device Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.INFO);
@@ -136,7 +135,7 @@ WBMQTT.prototype.addDevice = function (device){
 	self.publishDeviceValue(device);
 };
 
-WBMQTT.prototype.removeDevice = function (device){
+WBMQTT.prototype.removeDevice = function (device) {
 	var self = this;
 
 	self.log("Remove device Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.INFO);
@@ -190,7 +189,7 @@ WBMQTT.prototype.onMessage = function (topic, payload) {
 	var self = this;
 	var payload = byteArrayToString(payload);
 
-	if (!topic.endsWith(self.config.topicPostfixSet)){
+	if (!topic.endsWith(self.config.topicPostfixSet)) {
 		self.log("New message topic does not end on topicPostfixSet", LoggingLevel.INFO);
 		self.log("Topic " + topic, LoggingLevel.INFO);
 		self.log("topicPostfixSet " + self.config.topicPostfixSet, LoggingLevel.INFO);
@@ -208,7 +207,7 @@ WBMQTT.prototype.onMessage = function (topic, payload) {
 			self.log("New message topic" + topic + " payload " + payload, LoggingLevel.DEBUG);
 			self.log("Found device Id:" + device.get("id") + " DeviceType:" + device.get("deviceType"), LoggingLevel.DEBUG);
 
-			switch (deviceType){
+			switch (deviceType) {
 				case zWaveDeviceType.battery:
 				case zWaveDeviceType.sensorBinary:
 				case zWaveDeviceType.sensorMultilevel:
@@ -236,8 +235,8 @@ WBMQTT.prototype.onMessage = function (topic, payload) {
 				case zWaveDeviceType.thermostat:
 				case zWaveDeviceType.switchMultilevel:
 					var level = parseInt(payload);
-					if (!isNaN(level)){
-						device.performCommand("exact", { level: payload});
+					if (!isNaN(level)) {
+						device.performCommand("exact", { level: payload });
 					} else {
 						device.performCommand(payload);
 					}
@@ -249,7 +248,7 @@ WBMQTT.prototype.onMessage = function (topic, payload) {
 		}
 	});
 
-	if (!success){
+	if (!success) {
 		self.log("Can't find the device with topic " + topic, LoggingLevel.INFO);
 	}
 };
@@ -268,30 +267,30 @@ WBMQTT.prototype.getDeviceTopic = function (device) {
 	return self.config.topicPrefix + "/controls/" + device.get("metrics:title").toTopicAffix() + " " + device.get("id").split("_").pop().toTopicAffix();
 };
 
-WBMQTT.prototype.getDeviceValueArray = function (device){
+WBMQTT.prototype.getDeviceValueArray = function (device) {
 	var self = this;
 	var deviceType = device.get("deviceType");
 
 	deviceTopicValue = new Array();
 
-	addDevice = function (topic,value){
-		var item= [topic, value];
+	addDevice = function (topic, value) {
+		var item = [topic, value];
 		deviceTopicValue.push(item);
 	};
 
-	if (!(deviceType in zWaveDeviceType)){
+	if (!(deviceType in zWaveDeviceType)) {
 		self.log("Can't get device value, unknown type Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.INFO);
 		return deviceTopicValue;
 	}
 
 	var value = device.get("metrics:level");
-	if (typeof value == "undefined"){
+	if (typeof value == "undefined") {
 		var id = device.get("id");
 		self.error("Device " + id + " metrics:level undefined");
 		return deviceTopicValue;
 	}
 
-	switch (deviceType){
+	switch (deviceType) {
 		case zWaveDeviceType.doorlock:
 		case zWaveDeviceType.switchBinary:
 		case zWaveDeviceType.sensorBinary:
@@ -316,11 +315,11 @@ WBMQTT.prototype.publishDeviceValue = function (device) {
 
 	self.log("Publish Device Value Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.DEBUG);
 
-	deviceArray.forEach(function (item){
+	deviceArray.forEach(function (item) {
 		var value = item.pop();
 		var topic = item.pop();
 		self.log(topic + " " + value, LoggingLevel.DEBUG);
-		self.publish(topic,value, true);
+		self.publish(topic, value, true);
 	});
 };
 
@@ -331,15 +330,15 @@ WBMQTT.prototype.removeDeviceValue = function (device) {
 
 	self.log("Remove Device Value Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.DEBUG);
 
-	deviceArray.forEach(function (item){
+	deviceArray.forEach(function (item) {
 		var value = item.pop();
 		var topic = item.pop();
 		self.log(topic + " " + value, LoggingLevel.DEBUG);
-		self.publish(topic,"", true);
+		self.publish(topic, "", true);
 	});
 };
 
-WBMQTT.prototype.getDeviceMetaArray = function (device){
+WBMQTT.prototype.getDeviceMetaArray = function (device) {
 	var self = this;
 
 	var deviceType = device.get('deviceType');
@@ -348,21 +347,21 @@ WBMQTT.prototype.getDeviceMetaArray = function (device){
 	var metaTopicValue = new Array();
 	var metaJSON = {};
 
-	var addMetaTopicValue = function (topic, value){
+	var addMetaTopicValue = function (topic, value) {
 		metaJSON[topic] = value;
 		//For old convention compatibility
-		if (topic == "readonly"){
-			value = (value == "true")?"1":"0"
+		if (topic == "readonly") {
+			value = (value == "true") ? "1" : "0"
 		}
-		metaTopicValue.push([deviceMetaTopic + "/" + topic, value]);		
+		metaTopicValue.push([deviceMetaTopic + "/" + topic, value]);
 	}
 
-	var addMetaJSON = function (){
+	var addMetaJSON = function () {
 		metaTopicValue.push([deviceMetaTopic, JSON.stringify(metaJSON)]);
 	}
 
 	addMetaTopicValue("z-wave_type", deviceType);
-	switch (deviceType){
+	switch (deviceType) {
 		case zWaveDeviceType.thermostat:
 			addMetaTopicValue("type", "range");
 			addMetaTopicValue("max", device.get("metrics:max"));
@@ -407,29 +406,29 @@ WBMQTT.prototype.getDeviceMetaArray = function (device){
 	return metaTopicValue;
 }
 
-WBMQTT.prototype.publishDeviceMeta = function (device){
+WBMQTT.prototype.publishDeviceMeta = function (device) {
 	var self = this;
 
 	self.log("Publish Device Meta Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.DEBUG);
 
 	var metaArray = self.getDeviceMetaArray(device);
-	metaArray.forEach(function (item){
+	metaArray.forEach(function (item) {
 		var value = item.pop();
 		var topic = item.pop();
-		self.publish(topic,value, true);
+		self.publish(topic, value, true);
 	});
 };
 
-WBMQTT.prototype.removeDeviceMeta = function (device){
+WBMQTT.prototype.removeDeviceMeta = function (device) {
 	var self = this;
 	var metaArray = self.getDeviceMetaArray(device);
 
 	self.log("Remove Device Meta Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.DEBUG);
 
-	metaArray.forEach(function (item){
+	metaArray.forEach(function (item) {
 		var value = item.pop();
 		var topic = item.pop();
-		self.publish(topic,"", true);
+		self.publish(topic, "", true);
 	});
 };
 
@@ -437,11 +436,11 @@ WBMQTT.prototype.removeDeviceMeta = function (device){
 // --- Utility methods
 // ----------------------------------------------------------------------------
 
-String.prototype.toCamelCase = function() {
+String.prototype.toCamelCase = function () {
 	return this
-		.replace(/\s(.)/g, function($1) { return $1.toUpperCase(); })
+		.replace(/\s(.)/g, function ($1) { return $1.toUpperCase(); })
 		.replace(/\s/g, '')
-		.replace(/^(.)/, function($1) { return $1.toLowerCase(); });
+		.replace(/^(.)/, function ($1) { return $1.toLowerCase(); });
 };
 
 String.prototype.startsWith = function (s) {
@@ -464,9 +463,9 @@ String.prototype.toTopicAffix = function () {
 const zWaveDeviceType = Object.freeze({
 	battery: "battery",
 	doorlock: "doorlock",
-	thermostat:"thermostat",
-	switchBinary:"switchBinary",
-	switchMultilevel:"switchMultilevel",
+	thermostat: "thermostat",
+	switchBinary: "switchBinary",
+	switchMultilevel: "switchMultilevel",
 	sensorBinary: "sensorBinary",
 	sensorMultilevel: "sensorMultilevel",
 	toggleButton: "toggleButton",
@@ -479,5 +478,7 @@ const zWaveDeviceType = Object.freeze({
 	//switchRGB:"switchRGB"
 });
 
-const LoggingLevel = Object.freeze({ INFO: "INFO", 
-									 DEBUG: "DEBUG"});
+const LoggingLevel = Object.freeze({
+	INFO: "INFO",
+	DEBUG: "DEBUG"
+});
