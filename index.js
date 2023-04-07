@@ -57,11 +57,8 @@ WBMQTT.prototype.init = function (config) {
 
 	var self = this;
 
-	// Default counters
+	// Defaults
 	self.reconnectCount = 0;
-	self.isStopping = false;
-	self.isConnected = false;
-	self.isConnecting = true;
 
 	// Init MQTT client
 	if (self.config.user != "none" && self.config.password != "none") {
@@ -79,21 +76,17 @@ WBMQTT.prototype.init = function (config) {
 	self.addСallback = _.bind(self.addDevice, self);
 	self.removeСallback = _.bind(self.removeDevice, self);
 
-	self.client.connect();
+	self.connectionAttempt();
 };
 
 WBMQTT.prototype.stop = function () {
 	var self = this;
 
 	// Cleanup
-	self.isStopping = true;
+	self.state = ModuleState.DISCONNECTING;
 	self.client.disconnect();
 
-	// Clear any active reconnect timers
-	if (self.reconnect_timer) {
-		clearTimeout(self.reconnect_timer);
-		self.reconnect_timer = null;
-	}
+	self.removeReconnectionAttempt();
 
 	WBMQTT.super_.prototype.stop.call(this);
 };
@@ -101,8 +94,37 @@ WBMQTT.prototype.stop = function () {
 // ----------------------------------------------------------------------------
 // --- Module methods
 // ----------------------------------------------------------------------------
+WBMQTT.prototype.connectionAttempt = function () {
+	var self = this;
 
-WBMQTT.prototype.onConnect = function(){
+	try {
+		self.state = ModuleState.CONNECTING;
+		self.client.connect();
+	} catch (exception) {
+		self.log("MQTT connection error to " + self.config.host + " as " + self.config.clientId, LoggingLevel.INFO);
+		self.reconnectionAttempt();
+	}
+}
+
+WBMQTT.prototype.reconnectionAttempt = function () {
+	var self = this;
+
+	self.reconnect_timer = setTimeout(function () {
+		self.log("Trying to reconnect (" + self.reconnectCount + ")", LoggingLevel.INFO);
+		self.reconnectCount++;
+		self.connectionAttempt();
+	}, Math.min(self.reconnectCount * 1000, 60000));
+}
+
+WBMQTT.prototype.removeReconnectionAttempt = function () {
+	// Clear any active reconnect timers
+	if (self.reconnect_timer) {
+		clearTimeout(self.reconnect_timer);
+		self.reconnect_timer = null;
+	}
+}
+
+WBMQTT.prototype.onConnect = function () {
 	var self = this;
 	self.log("Connected to " + self.config.host + " as " + self.config.clientId, LoggingLevel.INFO);
 
@@ -110,9 +132,7 @@ WBMQTT.prototype.onConnect = function(){
 	self.controller.devices.on('created', self.addСallback);
 	self.controller.devices.on('removed', self.removeСallback);
 
-	self.isConnected = true;
-	self.isConnecting = false;
-	self.isStopping = false;
+	self.state = ModuleState.CONNECTED
 	self.reconnectCount = 0;
 
 	self.client.subscribe(self.config.topicPrefix + "/controls/+/" + self.config.topicPostfixSet);
@@ -150,39 +170,14 @@ WBMQTT.prototype.onDisconnect = function () {
 	self.controller.devices.off("created", self.addСallback);
 	self.controller.devices.off("removed", self.removeСallback);
 
-	// Reset connected flag
-	if (self.isConnected === true) self.isConnected = false;
-
-	// Reset connecting flag
-	if (self.isConnecting === true) self.isConnecting = false;
-
-	if (self.isStopping) {
+	if (self.state == ModuleState.DISCONNECTING) {
 		self.log("Disconnected due to module stop, not reconnecting", LoggingLevel.INFO);
 		return;
 	}
 
+	self.state == ModuleState.DISCONNECTED
 	self.error("Disconnected, will retry to connect...");
-
-	// Setup a connection retry
-	self.reconnect_timer = setTimeout(function() {
-		if (self.isConnecting === true) {
-			self.log("Connection already in progress, cancelling reconnect", LoggingLevel.INFO);
-			return;
-		}
-
-		if (self.isConnected === true) {
-			self.log("Connection already open, cancelling reconnect", LoggingLevel.INFO);
-			return;
-		}
-
-		self.log("Trying to reconnect (" + self.reconnectCount + ")", LoggingLevel.INFO);
-
-		self.reconnectCount++;
-		self.isConnecting = true;
-		self.client.connect();
-
-		self.log("Reconnect attempt finished", LoggingLevel.INFO);
-	}, Math.min(self.reconnectCount * 1000, 60000));
+	self.reconnectionAttempt();
 };
 
 WBMQTT.prototype.onMessage = function (topic, payload) {
@@ -257,7 +252,7 @@ WBMQTT.prototype.onMessage = function (topic, payload) {
 WBMQTT.prototype.publish = function (topic, value, retained) {
 	var self = this;
 
-	if (self.client && self.isConnected) {
+	if (self.client && self.state == ModuleState.CONNECTED) {
 		self.client.publish(topic, value.toString().trim(), retained);
 	}
 };
@@ -481,4 +476,11 @@ const zWaveDeviceType = Object.freeze({
 const LoggingLevel = Object.freeze({
 	INFO: "INFO",
 	DEBUG: "DEBUG"
+});
+
+const ModuleState = Object.freeze({
+	CONNECTING: "CONNECTING",
+	CONNECTED: "CONNECTED",
+	DISCONNECTING: "DISCONNECTING",
+	DISCONNECTED: "DISCONNECTED"
 });
