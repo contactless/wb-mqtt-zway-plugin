@@ -1,5 +1,5 @@
 {
-	"m_title" : "Wiren Board MQTT Integration 2",
+	"m_title" : "Wiren Board MQTT Integration Native",
 	"m_descr" : "Publishes the status of devices to a Wiren Board MQTT topic and is able to set values based on subscribed topics. This version of the plugin is compatible with Wiren Board software only since wb-2304 release",
 
 	"client_id_label": "Client ID",
