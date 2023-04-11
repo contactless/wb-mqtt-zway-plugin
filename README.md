@@ -10,11 +10,11 @@ values based on subscribed topics.
         # Execute on Wiren Board
         apt install git
         cd /opt/z-way-server/automation/userModules
-        git clone https://github.com/wirenboard/wb-mqtt-zway-plugin.git WBMQTT
+        git clone https://github.com/wirenboard/wb-mqtt-zway-plugin.git WBMQTTNative
 ```
 1. To update to last version in this repo:
 ```shell
-        cd /opt/z-way-server/automation/userModules/WBMQTT
+        cd /opt/z-way-server/automation/userModules/WBMQTTNative
         git pull
 ```
 # Usage

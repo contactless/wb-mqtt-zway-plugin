@@ -16,15 +16,15 @@ Description:
 // --- Class definition, inheritance and setup
 // ----------------------------------------------------------------------------
 
-function WBMQTT(id, controller) {
-	WBMQTT.super_.call(this, id, controller);
+function WBMQTTNative(id, controller) {
+	WBMQTTNative.super_.call(this, id, controller);
 }
 
-inherits(WBMQTT, AutomationModule);
+inherits(WBMQTTNative, AutomationModule);
 
-_module = WBMQTT;
+_module = WBMQTTNative;
 
-WBMQTT.prototype.log = function (message, level) {
+WBMQTTNative.prototype.log = function (message, level) {
 	var self = this;
 
 	if (undefined === message) return;
@@ -41,7 +41,7 @@ WBMQTT.prototype.log = function (message, level) {
 	}
 };
 
-WBMQTT.prototype.error = function (message) {
+WBMQTTNative.prototype.error = function (message) {
 	if (undefined === message) message = 'An unknown error occured';
 	var error = new Error(message);
 	console.error('[' + this.constructor.name + '_' + this.id + '] ' + error.stack);
@@ -51,9 +51,9 @@ WBMQTT.prototype.error = function (message) {
 // --- Module instance initialized
 // ----------------------------------------------------------------------------
 
-WBMQTT.prototype.init = function (config) {
+WBMQTTNative.prototype.init = function (config) {
 	// Call superclass' init (this will process config argument and so on)
-	WBMQTT.super_.prototype.init.call(this, config);
+	WBMQTTNative.super_.prototype.init.call(this, config);
 
 	var self = this;
 
@@ -79,7 +79,7 @@ WBMQTT.prototype.init = function (config) {
 	self.connectionAttempt();
 };
 
-WBMQTT.prototype.stop = function () {
+WBMQTTNative.prototype.stop = function () {
 	var self = this;
 
 	// Cleanup
@@ -88,13 +88,13 @@ WBMQTT.prototype.stop = function () {
 
 	self.removeReconnectionAttempt();
 
-	WBMQTT.super_.prototype.stop.call(this);
+	WBMQTTNative.super_.prototype.stop.call(this);
 };
 
 // ----------------------------------------------------------------------------
 // --- Module methods
 // ----------------------------------------------------------------------------
-WBMQTT.prototype.connectionAttempt = function () {
+WBMQTTNative.prototype.connectionAttempt = function () {
 	var self = this;
 
 	try {
@@ -106,7 +106,7 @@ WBMQTT.prototype.connectionAttempt = function () {
 	}
 }
 
-WBMQTT.prototype.reconnectionAttempt = function () {
+WBMQTTNative.prototype.reconnectionAttempt = function () {
 	var self = this;
 
 	self.reconnect_timer = setTimeout(function () {
@@ -116,7 +116,7 @@ WBMQTT.prototype.reconnectionAttempt = function () {
 	}, Math.min(self.reconnectCount * 1000, 60000));
 }
 
-WBMQTT.prototype.removeReconnectionAttempt = function () {
+WBMQTTNative.prototype.removeReconnectionAttempt = function () {
 	// Clear any active reconnect timers
 	if (self.reconnect_timer) {
 		clearTimeout(self.reconnect_timer);
@@ -124,7 +124,7 @@ WBMQTT.prototype.removeReconnectionAttempt = function () {
 	}
 }
 
-WBMQTT.prototype.onConnect = function () {
+WBMQTTNative.prototype.onConnect = function () {
 	var self = this;
 	self.log("Connected to " + self.config.host + " as " + self.config.clientId, LoggingLevel.INFO);
 
@@ -147,7 +147,7 @@ WBMQTT.prototype.onConnect = function () {
 	});
 }
 
-WBMQTT.prototype.addDevice = function (device) {
+WBMQTTNative.prototype.addDevice = function (device) {
 	var self = this;
 
 	self.log("Add new device Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.INFO);
@@ -155,7 +155,7 @@ WBMQTT.prototype.addDevice = function (device) {
 	self.publishDeviceValue(device);
 };
 
-WBMQTT.prototype.removeDevice = function (device) {
+WBMQTTNative.prototype.removeDevice = function (device) {
 	var self = this;
 
 	self.log("Remove device Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.INFO);
@@ -163,7 +163,7 @@ WBMQTT.prototype.removeDevice = function (device) {
 	self.removeDeviceValue(device);
 };
 
-WBMQTT.prototype.onDisconnect = function () {
+WBMQTTNative.prototype.onDisconnect = function () {
 	var self = this;
 
 	self.controller.devices.off("change:metrics:level", self.updateCallback);
@@ -180,7 +180,7 @@ WBMQTT.prototype.onDisconnect = function () {
 	self.reconnectionAttempt();
 };
 
-WBMQTT.prototype.onMessage = function (topic, payload) {
+WBMQTTNative.prototype.onMessage = function (topic, payload) {
 	var self = this;
 	var payload = byteArrayToString(payload);
 
@@ -249,7 +249,7 @@ WBMQTT.prototype.onMessage = function (topic, payload) {
 };
 
 
-WBMQTT.prototype.publish = function (topic, value, retained) {
+WBMQTTNative.prototype.publish = function (topic, value, retained) {
 	var self = this;
 
 	if (self.client && self.state == ModuleState.CONNECTED) {
@@ -257,12 +257,12 @@ WBMQTT.prototype.publish = function (topic, value, retained) {
 	}
 };
 
-WBMQTT.prototype.getDeviceTopic = function (device) {
+WBMQTTNative.prototype.getDeviceTopic = function (device) {
 	var self = this;
 	return self.config.topicPrefix + "/controls/" + device.get("metrics:title").toTopicAffix() + " " + device.get("id").split("_").pop().toTopicAffix();
 };
 
-WBMQTT.prototype.getDeviceValueArray = function (device) {
+WBMQTTNative.prototype.getDeviceValueArray = function (device) {
 	var self = this;
 	var deviceType = device.get("deviceType");
 
@@ -303,7 +303,7 @@ WBMQTT.prototype.getDeviceValueArray = function (device) {
 	return deviceTopicValue;
 };
 
-WBMQTT.prototype.publishDeviceValue = function (device) {
+WBMQTTNative.prototype.publishDeviceValue = function (device) {
 	var self = this;
 
 	var deviceArray = self.getDeviceValueArray(device);
@@ -318,7 +318,7 @@ WBMQTT.prototype.publishDeviceValue = function (device) {
 	});
 };
 
-WBMQTT.prototype.removeDeviceValue = function (device) {
+WBMQTTNative.prototype.removeDeviceValue = function (device) {
 	var self = this;
 
 	var deviceArray = self.getDeviceValueArray(device);
@@ -333,7 +333,7 @@ WBMQTT.prototype.removeDeviceValue = function (device) {
 	});
 };
 
-WBMQTT.prototype.getDeviceMetaArray = function (device) {
+WBMQTTNative.prototype.getDeviceMetaArray = function (device) {
 	var self = this;
 
 	var deviceType = device.get('deviceType');
@@ -401,7 +401,7 @@ WBMQTT.prototype.getDeviceMetaArray = function (device) {
 	return metaTopicValue;
 }
 
-WBMQTT.prototype.publishDeviceMeta = function (device) {
+WBMQTTNative.prototype.publishDeviceMeta = function (device) {
 	var self = this;
 
 	self.log("Publish Device Meta Id:" + device.get("id") + " Type:" + device.get("deviceType"), LoggingLevel.DEBUG);
@@ -414,7 +414,7 @@ WBMQTT.prototype.publishDeviceMeta = function (device) {
 	});
 };
 
-WBMQTT.prototype.removeDeviceMeta = function (device) {
+WBMQTTNative.prototype.removeDeviceMeta = function (device) {
 	var self = this;
 	var metaArray = self.getDeviceMetaArray(device);
 
