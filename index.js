@@ -118,6 +118,8 @@ WBMQTTNative.prototype.reconnectionAttempt = function () {
 
 WBMQTTNative.prototype.removeReconnectionAttempt = function () {
 	// Clear any active reconnect timers
+	var self = this;
+
 	if (self.reconnect_timer) {
 		clearTimeout(self.reconnect_timer);
 		self.reconnect_timer = null;
