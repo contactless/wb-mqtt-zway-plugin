@@ -433,20 +433,27 @@ WBMQTTNative.prototype.removeDeviceMeta = function (device) {
 // --- Utility methods
 // ----------------------------------------------------------------------------
 
-String.prototype.toCamelCase = function () {
-	return this
-		.replace(/\s(.)/g, function ($1) { return $1.toUpperCase(); })
-		.replace(/\s/g, '')
-		.replace(/^(.)/, function ($1) { return $1.toLowerCase(); });
-};
 
-String.prototype.startsWith = function (s) {
-	return this.length >= s.length && this.substr(0, s.length) == s;
-};
+if (!String.prototype.toCamelCase) {
+	String.prototype.toCamelCase = function () {
+		return this
+			.replace(/\s(.)/g, function ($1) { return $1.toUpperCase(); })
+			.replace(/\s/g, '')
+			.replace(/^(.)/, function ($1) { return $1.toLowerCase(); });
+	};
+}
 
-String.prototype.endsWith = function (s) {
-	return this.length >= s.length && this.substr(this.length - s.length) == s;
-};
+if (!String.prototype.startsWith) {
+	String.prototype.startsWith = function (s) {
+		return this.length >= s.length && this.substr(0, s.length) == s;
+	};
+}
+
+if (String.prototype.endsWith) {
+	String.prototype.endsWith = function (s) {
+		return this.length >= s.length && this.substr(this.length - s.length) == s;
+	};
+}
 
 String.prototype.toTopicAffix = function () {
 	return this
