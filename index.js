@@ -72,7 +72,7 @@ WBMQTTNative.prototype.init = function (config) {
 	self.client.onconnect = function () { self.onConnect(); };
 	self.client.onmessage = function (topic, payload) { self.onMessage(topic, payload); };
 
-	self.updateCallback = _.bind(self.publishDeviceValue, self);
+	self.updateCallback = _.bind(self.updateDevice, self);
 	self.addCallback = _.bind(self.addDevice, self);
 	self.removeCallback = _.bind(self.removeDevice, self);
 
@@ -144,13 +144,25 @@ WBMQTTNative.prototype.onConnect = function () {
 	self.publish(self.config.topicPrefix + "/meta/name", "Z-Wave", true);
 
 	self.controller.devices.each(function (device) {
+		if (self.shouldSkip(device)) return;
+
 		self.publishDeviceMeta(device);
 		self.publishDeviceValue(device);
 	});
 }
 
+WBMQTTNative.prototype.updateDevice = function (device) {
+	var self = this;
+
+	if (self.shouldSkip(device)) return;
+
+	self.publishDeviceValue(device);
+};
+
 WBMQTTNative.prototype.addDevice = function (device) {
 	var self = this;
+
+	if (self.shouldSkip(device)) return;
 
 	self.log("Add new device Id:" + device.get("id") + " Type:" + device.get("deviceType"), WBMQTTNative.LoggingLevel.INFO);
 	self.publishDeviceMeta(device);
@@ -159,6 +171,8 @@ WBMQTTNative.prototype.addDevice = function (device) {
 
 WBMQTTNative.prototype.removeDevice = function (device) {
 	var self = this;
+
+	if (self.shouldSkip(device)) return;
 
 	self.log("Remove device Id:" + device.get("id") + " Type:" + device.get("deviceType"), WBMQTTNative.LoggingLevel.INFO);
 	self.removeDeviceMeta(device);
@@ -427,6 +441,11 @@ WBMQTTNative.prototype.removeDeviceMeta = function (device) {
 		var topic = item.pop();
 		self.publish(topic, "", true);
 	});
+};
+
+WBMQTTNative.prototype.shouldSkip = function (device) {
+	// skip devices created by the WBMQTTImport module (coming from MQTT broker we are publishing to)
+	return device.get("id").startsWith("WBMQTTImport_");
 };
 
 // ----------------------------------------------------------------------------
