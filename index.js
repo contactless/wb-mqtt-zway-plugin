@@ -457,7 +457,7 @@ if (String.prototype.endsWith) {
 
 WBMQTTNative.toTopicAffix = function (s) {
 	return s
-		.replace(/[+#]/g, "");
+		.replace(/[+#]/g, "").replace(/\//g, "_");
 };
 
 // ----------------------------------------------------------------------------
