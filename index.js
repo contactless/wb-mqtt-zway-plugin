@@ -261,7 +261,7 @@ WBMQTTNative.prototype.publish = function (topic, value, retained) {
 
 WBMQTTNative.prototype.getDeviceTopic = function (device) {
 	var self = this;
-	return self.config.topicPrefix + "/controls/" + device.get("metrics:title").toTopicAffix() + " " + device.get("id").split("_").pop().toTopicAffix();
+	return self.config.topicPrefix + "/controls/" + WBMQTTNative.toTopicAffix(device.get("metrics:title")) + " " + WBMQTTNative.toTopicAffix(device.get("id").split("_").pop());
 };
 
 WBMQTTNative.prototype.getDeviceValueArray = function (device) {
@@ -455,8 +455,8 @@ if (String.prototype.endsWith) {
 	};
 }
 
-String.prototype.toTopicAffix = function () {
-	return this
+WBMQTTNative.toTopicAffix = function (s) {
+	return s
 		.replace(/[+#]/g, "");
 };
 
