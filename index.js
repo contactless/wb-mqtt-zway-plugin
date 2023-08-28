@@ -1,6 +1,6 @@
 /*** MQTT Z-Way HA module ****************************************************
 
-Version: 1.6.1
+Version: 2.1.0
 -----------------------------------------------------------------------------
 Author: Robin Eggenkamp <robin@edubits.nl>, Ekaterina Volkova <ekaterina.volkova@wirenboard.ru>
 Description:
