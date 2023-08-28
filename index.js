@@ -73,8 +73,8 @@ WBMQTTNative.prototype.init = function (config) {
 	self.client.onmessage = function (topic, payload) { self.onMessage(topic, payload); };
 
 	self.updateCallback = _.bind(self.publishDeviceValue, self);
-	self.addСallback = _.bind(self.addDevice, self);
-	self.removeСallback = _.bind(self.removeDevice, self);
+	self.addCallback = _.bind(self.addDevice, self);
+	self.removeCallback = _.bind(self.removeDevice, self);
 
 	self.connectionAttempt();
 };
@@ -131,8 +131,8 @@ WBMQTTNative.prototype.onConnect = function () {
 	self.log("Connected to " + self.config.host + " as " + self.config.clientId, WBMQTTNative.LoggingLevel.INFO);
 
 	self.controller.devices.on("change:metrics:level", self.updateCallback);
-	self.controller.devices.on('created', self.addСallback);
-	self.controller.devices.on('removed', self.removeСallback);
+	self.controller.devices.on('created', self.addCallback);
+	self.controller.devices.on('removed', self.removeCallback);
 
 	self.state = WBMQTTNative.ModuleState.CONNECTED
 	self.reconnectCount = 0;
@@ -169,8 +169,8 @@ WBMQTTNative.prototype.onDisconnect = function () {
 	var self = this;
 
 	self.controller.devices.off("change:metrics:level", self.updateCallback);
-	self.controller.devices.off("created", self.addСallback);
-	self.controller.devices.off("removed", self.removeСallback);
+	self.controller.devices.off("created", self.addCallback);
+	self.controller.devices.off("removed", self.removeCallback);
 
 	if (self.state == WBMQTTNative.ModuleState.DISCONNECTING) {
 		self.log("Disconnected due to module stop, not reconnecting", WBMQTTNative.LoggingLevel.INFO);
