@@ -304,6 +304,7 @@ WBMQTTNative.prototype.getDeviceValueArray = function (device) {
 	switch (deviceType) {
 		case WBMQTTNative.zWaveDeviceType.doorlock:
 		case WBMQTTNative.zWaveDeviceType.switchBinary:
+		case WBMQTTNative.zWaveDeviceType.switchControl:
 		case WBMQTTNative.zWaveDeviceType.sensorBinary:
 			if (value == 0 || value === "off" || value == "closed") {
 				value = "0";
@@ -379,6 +380,7 @@ WBMQTTNative.prototype.getDeviceMetaArray = function (device) {
 			break;
 		case WBMQTTNative.zWaveDeviceType.doorlock:
 		case WBMQTTNative.zWaveDeviceType.switchBinary:
+		case WBMQTTNative.zWaveDeviceType.switchControl:
 			addMetaTopicValue("type", "switch");
 			break;
 		case WBMQTTNative.zWaveDeviceType.switchMultilevel:
@@ -403,7 +405,6 @@ WBMQTTNative.prototype.getDeviceMetaArray = function (device) {
 		default:
 			//This case should be used for
 			//this unsupported device types
-			//switchControl:"switchControl",
 			//sensorMultiline:"sensorMultiline",
 			//sensorDiscrete:"sensorDiscrete",
 			//camera: "camera",
@@ -492,8 +493,8 @@ WBMQTTNative.zWaveDeviceType = Object.freeze({
 	sensorBinary: "sensorBinary",
 	sensorMultilevel: "sensorMultilevel",
 	toggleButton: "toggleButton",
+	switchControl:"switchControl",
 	//Unsupported device types
-	//switchControl:"switchControl",
 	//sensorMultiline:"sensorMultiline",
 	//sensorDiscrete:"sensorDiscrete",
 	//camera: "camera",
