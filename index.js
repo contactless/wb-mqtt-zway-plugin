@@ -277,7 +277,7 @@ WBMQTTNative.prototype.publish = function (topic, value, retained) {
 	var self = this;
 
 	if (self.client && self.state == WBMQTTNative.ModuleState.CONNECTED) {
-		self.client.publish(topic, value.toString().trim(), retained);
+		self.client.publish(topic, (value !== undefined && value !== null) ? value.toString().trim() : "", retained);
 	}
 };
 
