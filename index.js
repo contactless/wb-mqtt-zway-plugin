@@ -57,6 +57,10 @@ WBMQTTNative.prototype.init = function (config) {
 
 	var self = this;
 
+	if (config.groupByDevices === undefined) {
+		this.config.groupByDevices = false;
+	}
+
 	// Defaults
 	self.reconnectCount = 0;
 
@@ -137,17 +141,16 @@ WBMQTTNative.prototype.onConnect = function () {
 	self.state = WBMQTTNative.ModuleState.CONNECTED
 	self.reconnectCount = 0;
 
-	self.client.subscribe(self.config.topicPrefix + "/controls/+/" + self.config.topicPostfixSet);
+	if (!self.config.groupByDevices) {
+		self.client.subscribe(self.config.topicPrefix + "/controls/+/" + self.config.topicPostfixSet);
+	} // if groupByDevices == true, the subscription is made in init
 
 	// Publish connected notification
 	self.publish(self.config.topicPrefix + "/connected", "1", true);
 	self.publish(self.config.topicPrefix + "/meta/name", "Z-Wave", true);
 
 	self.controller.devices.each(function (device) {
-		if (self.shouldSkip(device)) return;
-
-		self.publishDeviceMeta(device);
-		self.publishDeviceValue(device);
+		self.addDevice(device);
 	});
 }
 
@@ -167,6 +170,11 @@ WBMQTTNative.prototype.addDevice = function (device) {
 	self.log("Add new device Id:" + device.get("id") + " Type:" + device.get("deviceType"), WBMQTTNative.LoggingLevel.INFO);
 	self.publishDeviceMeta(device);
 	self.publishDeviceValue(device);
+	
+	// Subscribe
+	if (self.config.groupByDevices) {
+		self.client.subscribe(self.getDeviceTopicPrefix(device) + "/controls/+/" + self.config.topicPostfixSet);
+	} // if groupByDevices == false, the subscription is made in init
 };
 
 WBMQTTNative.prototype.removeDevice = function (device) {
@@ -273,32 +281,50 @@ WBMQTTNative.prototype.publish = function (topic, value, retained) {
 	}
 };
 
-WBMQTTNative.prototype.getDeviceTopic = function (device) {
-	var self = this;
-	return self.config.topicPrefix + "/controls/" + WBMQTTNative.toTopicAffix(device.get("metrics:title")) + " " + WBMQTTNative.toTopicAffix(device.get("id").split("_").pop());
+WBMQTTNative.prototype.getDeviceTopicPrefix = function (device) {
+	if (this.config.groupByDevices) {
+		var vDevId = device.get("id");
+		var creatorId = device.get("creatorId");
+		var bindingName = device.get("bindingName");
+		var nodeId = device.get("nodeId");
+		
+		var groupId = this.config.topicPrefix;
+		
+		if (nodeId === undefined) {
+			groupId += "-" + vDevId; // use vDevID as the group
+		} else {
+			// use physical nodeId as a group
+			if (bindingName !== undefined) {
+				groupId += "-" + bindingName;
+			}
+			groupId += "-" + nodeId;
+		}
+		
+		return groupId;
+	} else {
+		return this.config.topicPrefix;
+	}
 };
 
-WBMQTTNative.prototype.getDeviceValueArray = function (device) {
+WBMQTTNative.prototype.getDeviceTopic = function (device) {
+	var self = this;
+	return self.getDeviceTopicPrefix(device) + "/controls/" + WBMQTTNative.toTopicAffix(device.get("metrics:title")) + " " + WBMQTTNative.toTopicAffix(device.get("id").split("_").pop());
+};
+
+WBMQTTNative.prototype.getDeviceValue = function (device) {
 	var self = this;
 	var deviceType = device.get("deviceType");
 
-	deviceTopicValue = new Array();
-
-	addDevice = function (topic, value) {
-		var item = [topic, value];
-		deviceTopicValue.push(item);
-	};
-
 	if (!(deviceType in WBMQTTNative.zWaveDeviceType)) {
 		self.log("Can't get device value, unknown type Id:" + device.get("id") + " Type:" + device.get("deviceType"), WBMQTTNative.LoggingLevel.INFO);
-		return deviceTopicValue;
+		return;
 	}
 
 	var value = device.get("metrics:level");
 	if (typeof value == "undefined") {
 		var id = device.get("id");
 		self.error("Device " + id + " metrics:level undefined");
-		return deviceTopicValue;
+		return;
 	}
 
 	switch (deviceType) {
@@ -316,38 +342,34 @@ WBMQTTNative.prototype.getDeviceValueArray = function (device) {
 			break;
 	}
 
-	addDevice(self.getDeviceTopic(device), value);
-	return deviceTopicValue;
+	return {
+		topic: self.getDeviceTopic(device),
+		value: value
+	};
 };
 
 WBMQTTNative.prototype.publishDeviceValue = function (device) {
 	var self = this;
 
-	var deviceArray = self.getDeviceValueArray(device);
+	var topicObj = self.getDeviceValue(device);
+	
+	if (topicObj === undefined) return;
 
 	self.log("Publish Device Value Id:" + device.get("id") + " Type:" + device.get("deviceType"), WBMQTTNative.LoggingLevel.DEBUG);
 
-	deviceArray.forEach(function (item) {
-		var value = item.pop();
-		var topic = item.pop();
-		self.log(topic + " " + value, WBMQTTNative.LoggingLevel.DEBUG);
-		self.publish(topic, value, true);
-	});
+	self.log(topicObj.topic + " " + topicObj.value, WBMQTTNative.LoggingLevel.DEBUG);
+	self.publish(topicObj.topic, topicObj.value, true);
 };
 
 WBMQTTNative.prototype.removeDeviceValue = function (device) {
 	var self = this;
 
-	var deviceArray = self.getDeviceValueArray(device);
+	var topicObj = self.getDeviceValue(device);
 
 	self.log("Remove Device Value Id:" + device.get("id") + " Type:" + device.get("deviceType"), WBMQTTNative.LoggingLevel.DEBUG);
 
-	deviceArray.forEach(function (item) {
-		var value = item.pop();
-		var topic = item.pop();
-		self.log(topic + " " + value, WBMQTTNative.LoggingLevel.DEBUG);
-		self.publish(topic, "", true);
-	});
+	self.log(topicObj.topic + " " + topicObj.value, WBMQTTNative.LoggingLevel.DEBUG);
+	self.publish(topicObj.topic, "", true);
 };
 
 WBMQTTNative.prototype.getDeviceMetaArray = function (device) {
