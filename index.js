@@ -469,7 +469,7 @@ if (!String.prototype.startsWith) {
 	};
 }
 
-if (String.prototype.endsWith) {
+if (!String.prototype.endsWith) {
 	String.prototype.endsWith = function (s) {
 		return this.length >= s.length && this.substr(this.length - s.length) == s;
 	};
