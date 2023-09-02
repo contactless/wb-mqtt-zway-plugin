@@ -1,0 +1,21 @@
+name: Publish to developer.z-wave.me
+
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Publish to developer.z-wave.me
+      run: |
+        cd ../ && ${MODULE_NAME}/.github/workflows/uploadModule.sh ${MODULE_ID} ${MODULE_NAME} ${USERNAME} ${PASSWORD}
+      env:
+        USERNAME: ${{secrets.USERNAME}}
+        PASSWORD: ${{secrets.PASSWORD}}
+        MODULE_NAME: ${{env.MODULE_NAME}}
+        MODULE_ID: ${{env.MODULE_ID}}
