@@ -3,6 +3,8 @@
 Publishes the status of devices to a MQTT topic and is able to set
 values based on subscribed topics.
 
+This repository is archived now. You can find new versions of the plugin in the repository of our partners https://github.com/Z-Wave-Me/WBMQTTNative.
+
 # Installation
 
 1. Install module:
