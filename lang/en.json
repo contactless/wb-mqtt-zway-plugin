@@ -14,6 +14,8 @@
 	"topic_postfix_set_helper": "Publish a message to the set-topic of a device to set it's value",
 	"precision_label": "Sensor value precision",
 	"precision_helper": "Set fractional value for WirenBoard web interface",
+	"groupByDevices_label": "Group topics by devices",
+	"groupByDevices_helper": "If set, topics will have names /devices/zway-&lt;binding name&gt;-&lt;node id&gt;/controls/&lt;vDev title&gt;. Otherwise all topics will be under /devices/zway/controls/&lt;vDev title&gt;",
 	"debug_label": "Debug",
 	"debug_helper": "Enable or disable extended debug output"
 }
